@@ -1,0 +1,6 @@
+amount;type;product_name;date
+USD 1,250.00;revenue;North America Order;2026-02-10
+(GBP 120.50);expense;Chargeback;2026-02-11
+EUR 1.234,56;revenue;EU Sale;2026-02-12
+INR 1,000.00;expense;IN Fee;2026-02-13
+JPY 1500;expense;Logistics Fee;2026-02-11

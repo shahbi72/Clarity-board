@@ -1,0 +1,202 @@
+date,order_id,product_name,category,quantity,revenue,cost,discount,tax,shipping,profit,amount,type,currency,notes
+12/03/2025,ORD-2025-0000001,Wireless Earbuds Pro,Office,2,£111.22,£93.57,16.62,£3.33,£36.82,-£5.88,£134.75,credit,£,Standard order.
+"May 14, 2026",ORD-2026-0000002,Niño Starter Kit,Home,1,£733.96,418.57,101.06,£40.60,£38.77,£337.08,712.27,revenue,£,Standard order.
+2024/10/21,ORD-2024-0000003,旅行 Backpack,Fitness,4,161.09,143.50,£10.04,£15.03,26.77,(£14.17),£192.85,revenue,£,Standard order.
+08/12/2025,ORD-2025-0000004,"4K Monitor 27""",Electronics,4,$426.02,304.71,$19.65,$29.37,12.33,99.26,448.07,revenue,$,Standard order.
+"Sep 1, 2026",ORD-2026-0000005,Niño Starter Kit,Fitness,6,428.79,230.46,75.97,16.54,24.01,,393.37,revenue,,Standard order.
+09/17/2024,ORD-2024-0000006,旅行 Backpack,Home,7,"1,200.66",886.27,AED 94.39,AED 54.98,AED 39.30,314.50,"AED 1,200.55",credit,AED,Standard order.
+27/11/2025,ORD-2025-0000007,Mechanical Keyboard,Home,8,"€1,267.67","1,132.24",€182.39,€74.14,37.52,€206.16,"1,196.94",revenue,€,Standard order.
+"Jan 27, 2026",ORD-2026-0000008,旅行 Backpack,Travel,1,INR 322.45,INR 215.89,INR 33.06,INR 23.15,INR 36.63,79.84,INR 349.17,revenue,INR,Standard order.
+"Mar 13, 2024",ORD-2024-0000009,Café Latte Mug,Fitness,4,€994.73,€380.53,139.27,52.04,4.59,,912.09,revenue,€,Standard order.
+"Dec 1, 2025",ORD-2025-0000010,Wireless Earbuds Pro,Home,1,JPY 393.61,JPY 160.16,75.23,JPY 19.80,JPY 16.50,JPY 272.38,-JPY 345.56,expense,JPY,Standard order.
+"Sep 12, 2026",ORD-2026-0000011,Water Bottle XL,Kitchen,4,AUD 716.54,AUD 506.61,AUD 113.17,56.07,AUD 1.32,,AUD 660.76,credit,AUD,Standard order.
+2024/03/11,ORD-2024-0000012,Mechanical Keyboard,Travel,1,AED 839.22,676.03,AED 105.81,AED 38.85,25.98,,AED 798.24,revenue,AED,Standard order.
+"Jun 14, 2025",ORD-2025-0000013,Water Bottle XL,Fitness,6,"€1,018.41",€522.00,€72.43,€37.62,€35.10,496.12,(€313.00),expense,€,Standard order.
+2026-08-14,ORD-2026-0000014,Desk Lamp Max,Office,7,£966.78,£726.89,£100.02,£81.85,£8.08,£249.98,£956.69,revenue,£,Standard order.
+2024-04-10,ORD-2024-0000015,旅行 Backpack,Kitchen,2,"1,049.32",740.23,181.18,82.94,38.78,368.55,989.86,revenue,,Standard order.
+2025/09/20,ORD-2025-0000016,Desk Lamp Max,Toys,7,$487.84,$228.24,$60.55,26.45,$36.43,$257.27,$490.17,revenue,$,Standard order.
+01/11/2026,ORD-2026-0000017,"4K Monitor 27""",Home,2,"£1,143.03",825.12,£78.13,£53.91,26.20,315.93,"£1,145.01",credit,£,"Applied promo bundle, includes cable."
+2024-03-04,ORD-2024-0000018,Water Bottle XL,Toys,,469.39,346.88,42.79,32.85,7.33,125.12,466.78,revenue,,Standard order.
+21/02/2025,ORD-2025-0000019,Wireless Earbuds Pro,Office,7,"¥1,234.60",¥837.97,157.94,¥106.93,39.76,¥407.88,"¥1,223.35",credit,¥,Standard order.
+05/26/2026,ORD-2026-0000020,Water Bottle XL,Toys,8,382.22,₹225.54,67.10,₹13.77,34.99,₹175.02,(₹282.71),expense,₹,Standard order.
+2024-02-12,ORD-2024-0000021,"4K Monitor 27""",Toys,1,¥616.18,¥477.49,¥17.27,¥25.10,¥13.24,117.62,(¥185.91),expense,¥,Standard order.
+10/04/2025,ORD-2025-0000022,Water Bottle XL,Electronics,,43.18,35.27,₹1.91,₹3.65,0.03,6.14,₹44.95,credit,₹,Standard order.
+05/15/2026,ORD-2026-0000023,Café Latte Mug,Home,7,₹942.69,₹569.24,₹44.20,69.90,31.23,₹316.52,₹999.62,credit,₹,Standard order.
+"Jun 24, 2024",ORD-2024-0000024,Niño Starter Kit,Fitness,5,"€1,251.35","1,019.57",€234.69,€81.64,10.83,€374.00,"€1,109.13",credit,€,Standard order.
+12/20/2025,ORD-2025-0000025,Crème Brûlée Torch,Toys,6,"€1,135.74",€858.65,55.58,€39.16,0.46,€293.05,"1,119.78",credit,€,Standard order.
+15/03/2026,ORD-2026-0000026,Crème Brûlée Torch,Travel,2,CAD 715.35,CAD 279.12,CAD 46.82,CAD 60.52,CAD 4.47,418.06,(212.38),expense,CAD,Standard order.
+"Oct 18, 2024",ORD-2024-0000027,Crème Brûlée Torch,Travel,5,"¥1,480.37",¥878.37,81.53,¥97.54,¥27.78,558.21,"1,524.16",credit,¥,Standard order.
+"Jan 10, 2025",ORD-2025-0000028,"4K Monitor 27""",Toys,6,SAR 203.81,180.75 SAR,7.03 SAR,SAR 10.76,SAR 31.54,(SAR 12.21),SAR 239.08,revenue,SAR,Standard order.
+"Aug 16, 2026",ORD-2026-0000029,Wireless Earbuds Pro,Home,1,"AUD 1,453.89",903.04,71.12,AUD 84.53,AUD 4.13,AUD 533.31,"AUD 1,471.43",revenue,AUD,Standard order.
+2024/06/06,ORD-2024-0000030,"4K Monitor 27""",Travel,2,336.12,126.38,5.67,11.58,34.90,168.93,376.93,credit,,Standard order.
+2025/03/26,ORD-2025-0000031,Desk Lamp Max,Office,3,351.22,€300.26,€37.28,19.47,€26.06,42.71,359.47,revenue,€,Standard order.
+03/18/2026,ORD-2026-0000032,Niño Starter Kit,Office,1,"€1,417.67",€890.48,37.90,€110.82,€31.84,€422.43,"€1,522.43",credit,€,Standard order.
+21/07/2024,ORD-2024-0000033,Café Latte Mug,Toys,8,823.43,723.09,55.50,67.00,7.86,80.98,842.79,revenue,,Standard order.
+2025/08/08,ORD-2025-0000034,"Gaming Chair, Pro",Electronics,3,374.41,132.23,₹57.07,₹15.82,₹23.40,260.03,356.56,revenue,₹,Delivered on time.
+2026-06-24,ORD-2026-0000035,Mechanical Keyboard,Home,7,¥84.58,69.01,¥11.83,¥5.60,17.31,,¥95.66,credit,¥,Standard order.
+"Jul 20, 2024",ORD-2024-0000036,"4K Monitor 27""",Office,6,$38.12,$26.65,$1.85,$1.77,$26.58,(15.03),($37.11),debit,$,Standard order.
+"Aug 21, 2025",ORD-2025-0000037,"Gaming Chair, Pro",Kitchen,8,"¥1,413.59",¥981.81,¥196.92,¥47.39,35.77,,"¥1,299.83",credit,¥,Standard order.
+2026/10/18,ORD-2026-0000038,Wireless Earbuds Pro,Toys,5,261.35,208.31,11.06,21.25,35.20,7.65,306.74,revenue,,Standard order.
+"Jul 27, 2024",ORD-2024-0000039,"Gaming Chair, Pro",Toys,1,₹484.36,₹170.09,₹21.85,₹42.79,₹4.30,₹289.03,₹509.60,revenue,₹,Standard order.
+2025/09/05,ORD-2025-0000040,Mechanical Keyboard,Office,,$731.41,$451.34,$122.47,$34.83,$9.66,$358.05,-692.13,debit,$,Standard order.
+21/05/2026,ORD-2026-0000041,旅行 Backpack,Travel,,"£1,243.85",491.98,£38.89,£45.87,24.61,£720.28,"£1,275.44",revenue,£,Standard order.
+"Apr 24, 2024",ORD-2024-0000042,Wireless Earbuds Pro,Kitchen,3,JPY 546.49,485.33,JPY 18.64,25.51,39.37,14.92,JPY 592.73,revenue,JPY,Standard order.
+"Sep 24, 2025",ORD-2025-0000043,旅行 Backpack,Kitchen,1,777.36,¥438.06,¥123.59,¥37.82,¥17.12,407.95,708.71,revenue,¥,Standard order.
+17/04/2026,ORD-2026-0000044,Water Bottle XL,Fitness,4,184.47,123.18,11.74,12.38,35.24,25.41,220.35,credit,,Standard order.
+13/08/2024,ORD-2024-0000045,Water Bottle XL,Toys,3,"€1,329.59",€902.43,239.49,€75.70,€5.44,€585.51,"€1,171.24",revenue,€,Standard order.
+27/10/2025,ORD-2025-0000046,Mechanical Keyboard,Toys,,₹313.36,129.74,₹39.19,₹15.48,28.26,₹179.07,₹317.91,credit,₹,Standard order.
+22/02/2026,ORD-2026-0000047,Desk Lamp Max,Fitness,5,577.90,437.35,€8.44,€36.91,€15.80,96.28,622.17,revenue,€,Standard order.
+2024/10/03,ORD-2024-0000048,Crème Brûlée Torch,Office,1,₹578.74,₹347.29,₹23.26,₹32.92,33.16,,₹621.56,revenue,₹,Standard order.
+08/21/2025,ORD-2025-0000049,Desk Lamp Max,Kitchen,1,"€1,432.98",522.21,69.81,46.01,4.98,€929.59,"€1,414.16",credit,€,Standard order.
+21/07/2026,ORD-2026-0000050,Niño Starter Kit,Toys,5,"¥1,057.55",¥754.30,181.27,¥51.30,21.97,¥411.25,¥949.55,credit,¥,Standard order.
+03/10/2024,ORD-2024-0000051,Wireless Earbuds Pro,Fitness,2,"1,495.43",709.22,39.80,136.28,31.31,658.42,"1,623.22",credit,,"Customer asked: ""gift wrap, please""."
+2025/11/07,ORD-2025-0000052,Mechanical Keyboard,Office,4,₹886.84,₹720.84,38.52,₹51.11,₹10.78,142.63,(₹227.28),expense,₹,Standard order.
+2026-11-13,ORD-2026-0000053,"4K Monitor 27""",Office,5,962.32,€682.44,€2.44,93.29,9.85,179.18,-€670.02,expense,€,Standard order.
+18/10/2024,ORD-2024-0000054,Crème Brûlée Torch,Kitchen,6,709.65,£480.52,£39.03,25.64,£29.53,,(£594.41),debit,£,Standard order.
+13/01/2025,ORD-2025-0000055,Café Latte Mug,Fitness,5,607.07,£533.13,£118.56,25.18,22.85,144.47,£536.54,credit,£,Standard order.
+2026-02-03,ORD-2026-0000056,Mechanical Keyboard,Office,6,"SAR 1,215.93",SAR 683.03,55.38,SAR 115.18,SAR 27.03,446.07 SAR,"1,302.76",credit,SAR,Standard order.
+01/17/2024,ORD-2024-0000057,Desk Lamp Max,Fitness,2,$406.54,$311.19,69.94,$26.39,$21.08,$117.82,384.07,revenue,$,Standard order.
+2025/04/11,ORD-2025-0000058,Wireless Earbuds Pro,Office,8,JPY 842.10,JPY 352.06,JPY 142.83,JPY 38.28,JPY 19.01,JPY 575.58,JPY 756.56,revenue,JPY,Standard order.
+02/03/2026,ORD-2026-0000059,Niño Starter Kit,Travel,7,USD 801.31,USD 568.35,10.35,37.28,14.36,,-USD 195.93,debit,USD,Standard order.
+"Sep 15, 2024",ORD-2024-0000060,旅行 Backpack,Travel,3,$373.16,$213.36,50.87,17.10,27.06,$166.51,366.45,credit,$,Standard order.
+2025-08-14,ORD-2025-0000061,Desk Lamp Max,Kitchen,5,¥316.14,174.54,¥55.17,¥19.01,¥6.43,¥171.33,¥286.41,credit,¥,Standard order.
+09/10/2026,ORD-2026-0000062,Wireless Earbuds Pro,Fitness,3,$782.12,544.25,$34.25,$52.83,5.02,$214.27,$805.72,credit,$,Standard order.
+04/06/2024,ORD-2024-0000063,Desk Lamp Max,Travel,6,859.82,740.63,134.61,24.23,32.56,197.01,782.00,credit,,Standard order.
+2025/12/16,ORD-2025-0000064,Wireless Earbuds Pro,Toys,,GBP 89.55,47.32,16.95,5.92,GBP 39.54,,GBP 118.06,revenue,GBP,Standard order.
+08/05/2026,ORD-2026-0000065,Café Latte Mug,Electronics,5,¥248.33,¥180.16,20.05,18.48,24.99,44.75,(¥61.57),expense,¥,Standard order.
+27/04/2024,ORD-2024-0000066,"Gaming Chair, Pro",Kitchen,6,972.21,355.22,$135.60,$58.10,$28.71,,$923.42,revenue,$,Standard order.
+2025-09-18,ORD-2025-0000067,Water Bottle XL,Travel,7,228.81,$193.22,22.34,$17.71,$26.26,13.96,$250.44,credit,$,Standard order.
+02/12/2026,ORD-2026-0000068,"Gaming Chair, Pro",Travel,3,"¥1,262.81",¥509.47,216.09,¥103.10,39.61,826.72,"1,189.43",credit,¥,"Customer asked: ""gift wrap, please""."
+"Sep 6, 2024",ORD-2024-0000069,Café Latte Mug,Travel,2,€501.84,€427.79,0.82,€31.53,15.86,27.48,€548.41,credit,€,Standard order.
+09/15/2025,ORD-2025-0000070,Desk Lamp Max,Toys,7,"₹1,376.43",₹615.55,₹111.11,₹43.91,18.18,₹809.90,"₹1,327.41",revenue,₹,Standard order.
+2026/04/01,ORD-2026-0000071,Crème Brûlée Torch,Toys,8,970.53,399.49,163.64,¥79.09,¥23.06,¥632.53,909.04,revenue,¥,Standard order.
+02/09/2024,ORD-2024-0000072,"4K Monitor 27""",Electronics,6,"1,165.81","1,013.06",232.06,67.84,36.27,¥280.70,"¥1,037.86",credit,¥,Standard order.
+2025-12-22,ORD-2025-0000073,Mechanical Keyboard,Toys,7,¥702.54,¥444.77,¥78.48,¥34.58,27.43,¥274.24,¥686.07,revenue,¥,Standard order.
+2026-06-09,ORD-2026-0000074,Water Bottle XL,Electronics,4,"$1,281.85","$1,031.45",$10.68,$108.85,7.17,145.06,"1,387.19",revenue,$,Standard order.
+2024/06/27,ORD-2024-0000075,旅行 Backpack,Office,8,€422.69,€322.30,10.04,€34.08,€16.41,59.94,€463.14,revenue,€,Standard order.
+"Oct 17, 2025",ORD-2025-0000076,Desk Lamp Max,Office,6,855.19 USD,USD 361.63,52.08,USD 58.71,USD 18.16,USD 468.77,USD 879.98,revenue,USD,Standard order.
+2026/12/02,ORD-2026-0000077,Wireless Earbuds Pro,Travel,4,"1,455.94",¥946.26,¥43.19,104.31,¥20.82,¥427.74,"¥1,537.88",revenue,¥,Standard order.
+09/01/2024,ORD-2024-0000078,Crème Brûlée Torch,Electronics,3,₹448.83,₹159.29,₹33.74,21.49,₹1.98,299.81,(174.39),expense,₹,Standard order.
+"Nov 12, 2025",ORD-2025-0000079,"4K Monitor 27""",Travel,2,USD 127.25,65.05,22.47,7.07,12.75,USD 64.85,124.60,revenue,USD,Standard order.
+11/22/2026,ORD-2026-0000080,旅行 Backpack,Fitness,7,"1,055.24",₹733.08,₹127.18,₹83.53,20.41,₹345.40,"₹1,032.00",credit,₹,Standard order.
+"Nov 4, 2024",ORD-2024-0000081,"4K Monitor 27""",Travel,6,¥256.38,¥116.98,6.41,11.21,23.56,¥111.04,284.74,credit,¥,Standard order.
+2025/06/25,ORD-2025-0000082,旅行 Backpack,Toys,7,£328.75,121.64,21.74,27.03,12.84,£188.98,£346.88,credit,£,Standard order.
+"Aug 25, 2026",ORD-2026-0000083,"Gaming Chair, Pro",Toys,1,"£1,419.39",£709.06,£204.94,69.77,£24.09,£821.41,"1,308.31",credit,£,Standard order.
+"Jan 12, 2024",ORD-2024-0000084,Desk Lamp Max,Travel,4,"1,479.13","INR 1,081.99",INR 107.50,INR 44.80,INR 12.14,447.70,"INR 1,428.57",credit,INR,Standard order.
+19/08/2025,ORD-2025-0000085,旅行 Backpack,Home,3,JPY 997.01,JPY 473.88,JPY 51.97,JPY 48.53,35.84,JPY 490.73,"JPY 1,029.41",revenue,JPY,Delivered on time.
+2026/10/27,ORD-2026-0000086,Café Latte Mug,Kitchen,5,$843.23,412.24,$38.16,56.55,$20.39,392.21,$882.01,revenue,$,Standard order.
+2024/02/03,ORD-2024-0000087,Café Latte Mug,Home,3,"1,060.10",520.15,156.21,82.76,14.62,598.78,"1,001.27",credit,,Standard order.
+08/09/2025,ORD-2025-0000088,Crème Brûlée Torch,Home,4,€219.15,121.78,30.97,€14.22,€25.24,88.88,227.64,revenue,€,Standard order.
+"Oct 23, 2026",ORD-2026-0000089,Water Bottle XL,Fitness,1,"CAD 1,369.54",CAD 953.62,62.84,CAD 129.45,CAD 7.45,341.86,"1,443.60",credit,CAD,Standard order.
+2024-10-05,ORD-2024-0000090,"Gaming Chair, Pro",Office,5,¥724.61,¥553.12,¥122.30,¥35.23,1.77,256.79,639.31,credit,¥,Standard order.
+2025/06/19,ORD-2025-0000091,"4K Monitor 27""",Kitchen,3,"1,163.69",905.93,18.13,62.60,18.32,194.97,"1,226.48",credit,,Standard order.
+2026/02/07,ORD-2026-0000092,Water Bottle XL,Office,1,36.62,22.11,0.32,¥1.82,¥7.13,¥5.88,¥45.25,revenue,¥,Standard order.
+05/07/2024,ORD-2024-0000093,旅行 Backpack,Home,2,57.50,38.02,5.40,£2.63,14.38,7.87,£69.11,credit,£,Standard order.
+"Nov 14, 2025",ORD-2025-0000094,Crème Brûlée Torch,Fitness,8,£70.59,£61.73,£8.81,£2.22,£39.53,-£24.08,103.53,credit,£,Standard order.
+"Jun 18, 2026",ORD-2026-0000095,Desk Lamp Max,Office,1,€431.30,€207.63,€8.15,25.26,28.80,€177.76,-€309.80,debit,€,Standard order.
+2024/11/22,ORD-2024-0000096,Café Latte Mug,Electronics,4,91.43,67.39,13.66,₹7.50,₹1.62,₹28.58,₹86.89,credit,₹,Standard order.
+2025-08-02,ORD-2025-0000097,"4K Monitor 27""",Kitchen,5,687.51,EUR 442.10,EUR 111.11,34.75,19.16,EUR 302.61,EUR 630.31,revenue,EUR,Standard order.
+2026/03/02,ORD-2026-0000098,旅行 Backpack,Fitness,5,"¥1,199.97",¥832.84,¥224.77,86.52,¥14.32,¥491.06,"¥1,076.04",revenue,¥,Standard order.
+09/01/2024,ORD-2024-0000099,Crème Brûlée Torch,Home,7,€680.47,€537.85,€37.13,€31.92,20.18,€127.65,€695.44,credit,€,Standard order.
+2025-05-28,ORD-2025-0000100,Desk Lamp Max,Office,5,"1,210.56",794.87,101.54,73.03,16.23,427.97,"1,198.28",credit,,Standard order.
+08/19/2026,ORD-2026-0000101,"4K Monitor 27""",Kitchen,3,702.64,471.68,86.31,42.76,INR 27.76,INR 246.75,INR 686.85,revenue,INR,Standard order.
+10/13/2024,ORD-2024-0000102,Niño Starter Kit,Travel,,£495.77,398.26,£58.30,£27.21,£16.22,£112.38,480.90,revenue,£,Follow-up requested by support.
+23/12/2025,ORD-2025-0000103,Crème Brûlée Torch,Travel,3,479.41,183.27,55.58,17.69,4.35,329.68,-260.93,expense,,Standard order.
+24/11/2026,ORD-2026-0000104,Crème Brûlée Torch,Fitness,4,693.96,449.51,12.12,CAD 27.98,29.00 CAD,199.59,CAD 738.82,revenue,CAD,Standard order.
+"Apr 22, 2024",ORD-2024-0000105,旅行 Backpack,Kitchen,2,120.68,92.35,AUD 3.09,7.56,9.63,AUD 14.23,AUD 134.78,revenue,AUD,Standard order.
+04/12/2025,ORD-2025-0000106,Niño Starter Kit,Home,5,"£1,087.32",£823.49,£57.73,76.98,8.49,£236.09,"£1,115.06",credit,£,Standard order.
+"Mar 24, 2026",ORD-2026-0000107,"Gaming Chair, Pro",Kitchen,8,"₹1,264.77",₹475.35,₹226.78,₹92.74,9.04,914.42,"1,139.77",revenue,₹,Standard order.
+03/18/2024,ORD-2024-0000108,Water Bottle XL,Electronics,6,¥153.88,¥130.53,¥14.38,¥8.17,17.36,¥12.20,¥165.03,credit,¥,Standard order.
+"Jun 12, 2025",ORD-2025-0000109,"Gaming Chair, Pro",Home,4,458.25,£329.76,51.42,£29.19,£14.57,136.15,-113.45,debit,£,Standard order.
+26/11/2026,ORD-2026-0000110,Café Latte Mug,Toys,8,"₹1,236.29","₹1,039.23",₹159.47,66.64,₹13.97,275.92,"₹1,157.43",revenue,₹,Standard order.
+"Aug 15, 2024",ORD-2024-0000111,Crème Brûlée Torch,Electronics,2,"$1,290.65",$986.24,195.70,$105.18,$10.63,384.30,"$1,210.76",credit,$,Standard order.
+2025-02-02,ORD-2025-0000112,旅行 Backpack,Toys,,"₹1,368.07",₹730.12,₹225.94,80.65,₹8.01,₹775.23,"₹1,230.79",credit,₹,Standard order.
+"Mar 3, 2026",ORD-2026-0000113,Niño Starter Kit,Home,4,€186.07,€92.98,€16.69,€12.67,€35.04,€62.07,217.09,credit,€,Standard order.
+01/09/2024,ORD-2024-0000114,Niño Starter Kit,Toys,3,SAR 592.28,483.47,SAR 93.30,SAR 15.43,SAR 29.42,SAR 157.26,SAR 543.83,credit,SAR,Standard order.
+16/12/2025,ORD-2025-0000115,"Gaming Chair, Pro",Home,2,¥575.92,517.54,105.82,¥20.88,¥36.28,¥107.04,527.26,revenue,¥,Standard order.
+2026/10/13,ORD-2026-0000116,"Gaming Chair, Pro",Fitness,1,₹556.50,312.30,₹59.51,₹19.18,₹19.86,264.67,-163.01,debit,₹,Standard order.
+2024-10-10,ORD-2024-0000117,Wireless Earbuds Pro,Kitchen,6,¥375.67,¥156.08,¥71.18,14.23,¥24.81,¥251.73,¥343.53,revenue,¥,Standard order.
+"May 21, 2025",ORD-2025-0000118,Desk Lamp Max,Home,2,"£1,097.83",£900.84,£64.02,£72.56,26.75,£161.70,"£1,133.12",revenue,£,Standard order.
+05/24/2026,ORD-2026-0000119,Café Latte Mug,Travel,3,"£1,074.12",£476.79,172.87,55.23,20.74,£694.23,£977.22,revenue,£,Delivered on time.
+08/19/2024,ORD-2024-0000120,Mechanical Keyboard,Toys,7,"£1,127.08",943.47,£3.97,£58.26,£24.36,,"£1,205.73",credit,£,Standard order.
+"Feb 13, 2025",ORD-2025-0000121,Mechanical Keyboard,Electronics,6,184.78,98.55,7.53,11.94,1.41,80.41,190.60,revenue,,Standard order.
+26/02/2026,ORD-2026-0000122,"Gaming Chair, Pro",Office,5,536.29,437.33,86.84,22.72,16.54,146.54,488.71,revenue,,Standard order.
+2024-09-19,ORD-2024-0000123,"Gaming Chair, Pro",Home,,"1,455.00","1,170.95",$194.93,$49.63,$1.48,$427.87,"$1,311.18",revenue,$,Standard order.
+12/11/2025,ORD-2025-0000124,Water Bottle XL,Office,1,SAR 958.87,SAR 714.70,SAR 26.01,67.78,39.40,,"SAR 1,040.04",revenue,SAR,Standard order.
+2026/10/18,ORD-2026-0000125,"Gaming Chair, Pro",Home,5,$683.74,431.67,89.86,$35.61,$10.79,295.53,$640.28,credit,$,Standard order.
+05/06/2024,ORD-2024-0000126,"4K Monitor 27""",Home,5,618.70,423.01,113.09,23.88,39.64,245.26,569.13,credit,,Standard order.
+2025/06/14,ORD-2025-0000127,Mechanical Keyboard,Toys,1,979.12,₹681.58,₹38.40,39.91,₹5.04,290.99,985.67,credit,₹,Standard order.
+24/11/2026,ORD-2026-0000128,Crème Brûlée Torch,Toys,1,582.97,220.49,41.34,25.96,12.72,365.14,580.31,credit,,Standard order.
+"Oct 16, 2024",ORD-2024-0000129,Mechanical Keyboard,Travel,6,"₹1,353.87",510.64,₹245.66,₹42.22,₹26.57,"₹1,020.10","₹1,177.00",revenue,₹,Standard order.
+2025/07/16,ORD-2025-0000130,Desk Lamp Max,Travel,4,£93.44,£51.75,16.32,£7.56,£3.47,46.98,88.15,credit,£,Standard order.
+"Aug 24, 2026",ORD-2026-0000131,"4K Monitor 27""",Office,4,676.50,$236.79,106.05,37.59,38.92,469.25,$646.96,revenue,$,Standard order.
+01/12/2024,ORD-2024-0000132,"Gaming Chair, Pro",Travel,6,"₹1,174.42","₹1,001.55",84.88,₹39.87,1.47,₹216.41,"₹1,130.88",credit,₹,Standard order.
+"Nov 1, 2025",ORD-2025-0000133,Café Latte Mug,Electronics,3,¥806.06,¥719.52,4.43,70.60,¥21.05,(0.68),¥893.28,credit,¥,Standard order.
+10/13/2026,ORD-2026-0000134,Niño Starter Kit,Electronics,7,846.96,¥683.60,¥154.81,¥52.81,¥18.71,¥246.65,¥763.67,revenue,¥,Standard order.
+2024/04/27,ORD-2024-0000135,Desk Lamp Max,Travel,8,¥76.33,¥53.26,5.17,¥4.49,¥9.03,,84.68,credit,¥,Standard order.
+05/26/2025,ORD-2025-0000136,Desk Lamp Max,Travel,2,AED 447.47,222.50,31.42,AED 15.43,14.73,,446.21,revenue,AED,"Bundle promotion
+Applied at checkout."
+25/05/2026,ORD-2026-0000137,"4K Monitor 27""",Fitness,7,"1,390.68","€1,016.37",120.22,126.85,€5.31,€362.37,"€1,402.62",revenue,€,Standard order.
+04/16/2024,ORD-2024-0000138,Crème Brûlée Torch,Toys,3,"£1,441.18",590.77,£190.18,115.04,£29.45,£896.10,"£1,395.49",revenue,£,Standard order.
+06/17/2025,ORD-2025-0000139,Café Latte Mug,Office,7,"€1,397.65",867.78,€195.32,€116.88,€15.06,€593.25,"1,334.27",credit,€,Standard order.
+"Feb 3, 2026",ORD-2026-0000140,Crème Brûlée Torch,Kitchen,3,₹872.12,₹514.91,₹107.64,₹51.64,₹28.67,₹384.54,844.79,revenue,₹,Standard order.
+2024-10-02,ORD-2024-0000141,Water Bottle XL,Home,3,"$1,299.33",532.62,$47.63,89.04,$39.81,,"1,380.55",revenue,$,Standard order.
+2025/06/24,ORD-2025-0000142,Crème Brûlée Torch,Fitness,,"INR 1,010.31",INR 848.35,INR 108.70,55.06,36.80,INR 178.80,993.47 INR,credit,INR,Standard order.
+09/10/2026,ORD-2026-0000143,"Gaming Chair, Pro",Office,3,640.42,544.67,26.27,49.50,7.91,64.61,671.56,credit,,Standard order.
+23/08/2024,ORD-2024-0000144,Mechanical Keyboard,Home,1,¥586.38,¥364.02,¥14.45,¥35.95,4.22,,-¥260.10,debit,¥,Standard order.
+04/03/2025,ORD-2025-0000145,Niño Starter Kit,Fitness,2,€768.54,€669.03,€143.48,41.66,€26.20,€175.13,-650.71,debit,€,Standard order.
+2026/08/27,ORD-2026-0000146,Desk Lamp Max,Electronics,6,"€1,348.54",€738.51,173.81,€62.04,€22.78,€699.02,"€1,259.55",credit,€,Standard order.
+2024-02-18,ORD-2024-0000147,"4K Monitor 27""",Office,4,"1,124.62",£818.45,£22.49,£85.44,£21.73,221.49,"1,209.30",revenue,£,Standard order.
+2025-12-13,ORD-2025-0000148,Crème Brûlée Torch,Toys,3,235.96,EUR 105.93,17.61,17.93,EUR 5.26,EUR 124.45,EUR 241.54,credit,EUR,Standard order.
+"Jan 2, 2026",ORD-2026-0000149,Water Bottle XL,Fitness,5,126.19 INR,INR 105.20,INR 3.57,10.38,INR 18.02,-3.84,151.02,revenue,INR,Standard order.
+2024/12/03,ORD-2024-0000150,Mechanical Keyboard,Office,8,₹885.11,779.32,₹6.16,₹54.80,₹30.05,27.10,963.80,revenue,₹,Standard order.
+26/10/2025,ORD-2025-0000151,Mechanical Keyboard,Toys,7,$178.84,$86.95,$22.11,12.30,13.14,,$182.17,credit,$,Standard order.
+2026-10-03,ORD-2026-0000152,Desk Lamp Max,Kitchen,5,230.20,JPY 160.63,1.54,9.37,JPY 39.32,22.42,JPY 277.35,credit,JPY,Standard order.
+"Nov 9, 2024",ORD-2024-0000153,Wireless Earbuds Pro,Home,8,"€1,102.20",862.35,€13.00,€99.36,€32.08,€121.41,"1,220.64",credit,€,"Customer asked: ""gift wrap, please""."
+2025/05/17,ORD-2025-0000154,"Gaming Chair, Pro",Toys,1,"1,010.73",$593.95,13.79,$97.31,$28.75,$304.51,"1,123.00",revenue,$,Standard order.
+2026/07/18,ORD-2026-0000155,Crème Brûlée Torch,Home,1,747.04,361.82,129.30,43.68,14.15,456.69,675.57,credit,,Standard order.
+2024/01/21,ORD-2024-0000156,"4K Monitor 27""",Toys,1,"₹1,141.42",869.38,₹215.25,₹76.97,₹16.70,₹393.62,"1,019.84",credit,₹,Standard order.
+2025-09-08,ORD-2025-0000157,Water Bottle XL,Toys,7,¥951.24,389.09,1.61,¥53.77,¥15.82,¥494.17,,revenue,¥,Standard order.
+2026/11/13,ORD-2026-0000158,Niño Starter Kit,Kitchen,2,48.06,26.72,6.42,3.25,26.83,-2.32,71.72,revenue,,Standard order.
+19/12/2024,ORD-2024-0000159,Mechanical Keyboard,Office,8,"¥1,347.41",¥812.33,¥30.70,¥124.79,¥9.01,¥431.98,"¥1,450.51",revenue,¥,Standard order.
+11/03/2025,ORD-2025-0000160,旅行 Backpack,Home,4,¥124.70,93.96,12.10,¥8.11,23.38,¥11.35,144.09,revenue,¥,Standard order.
+05/11/2026,ORD-2026-0000161,"Gaming Chair, Pro",Kitchen,5,"1,112.16",£908.10,£43.14,78.95,7.38,£160.87,"£1,155.35",revenue,£,Standard order.
+"Mar 22, 2024",ORD-2024-0000162,Wireless Earbuds Pro,Toys,4,915.53,$743.85,$36.18,$35.48,$11.29,$161.09,$926.12,revenue,$,Standard order.
+08/06/2025,ORD-2025-0000163,Café Latte Mug,Electronics,3,GBP 775.80,GBP 675.03,GBP 75.72,38.31,25.19 GBP,112.99,GBP 763.58,revenue,GBP,Standard order.
+2026/02/16,ORD-2026-0000164,Water Bottle XL,Electronics,7,£745.76,£358.98,£18.54,45.30,£35.80,£324.22,£808.32,revenue,£,Standard order.
+11/11/2024,ORD-2024-0000165,Crème Brûlée Torch,Kitchen,6,"$1,202.67",$958.84,$61.05,$103.52,$18.31,$183.05,"$1,263.45",credit,$,Standard order.
+11/08/2025,ORD-2025-0000166,Crème Brûlée Torch,Home,7,EUR 708.03,EUR 495.14,63.31,EUR 25.18,EUR 23.13,EUR 227.89,EUR 693.03,credit,EUR,Standard order.
+09/16/2026,ORD-2026-0000167,Crème Brûlée Torch,Electronics,4,978.35,732.81,54.09,$27.74,$27.32,244.57,$979.32,revenue,$,Standard order.
+2024/12/27,ORD-2024-0000168,Mechanical Keyboard,Home,8,"USD 1,084.76",USD 611.41,94.91,USD 88.40,19.64,USD 460.22,"1,097.89",credit,USD,Standard order.
+"Oct 16, 2025",ORD-2025-0000169,Café Latte Mug,Home,2,₹477.53,₹343.28,₹20.61,₹29.83,₹32.59,₹92.44,-₹96.31,debit,₹,Standard order.
+2026/06/04,ORD-2026-0000170,Niño Starter Kit,Home,5,EUR 992.87,372.49,EUR 100.09,EUR 40.20,8.23,672.04 EUR,941.21,revenue,EUR,Delivered on time.
+"Jul 28, 2024",ORD-2024-0000171,Water Bottle XL,Fitness,1,£209.59,£113.19,£41.78,£6.00,21.06,111.12,194.87,revenue,£,Standard order.
+09/19/2025,ORD-2025-0000172,Mechanical Keyboard,Travel,1,"1,206.86",766.34,148.92,75.85,4.26,509.33,"1,138.05",credit,,Standard order.
+2026-01-25,ORD-2026-0000173,"Gaming Chair, Pro",Travel,5,€552.52,445.30,€18.74,€42.26,€1.33,€82.37,€577.37,credit,€,Standard order.
+2024-02-25,ORD-2024-0000174,Café Latte Mug,Home,6,¥650.73,¥278.17,63.40,¥47.37,30.60,357.99,¥665.30,revenue,¥,Standard order.
+05/04/2025,ORD-2025-0000175,"4K Monitor 27""",Travel,,AUD 242.92,AUD 158.70,19.02 AUD,AUD 21.20,AUD 5.32,AUD 76.72,AUD 250.42,credit,AUD,Standard order.
+"Jan 1, 2026",ORD-2026-0000176,Desk Lamp Max,Fitness,5,515.85,190.11,£82.82,£32.50,3.41,£372.65,£468.94,revenue,£,Standard order.
+"Apr 20, 2024",ORD-2024-0000177,Niño Starter Kit,Kitchen,1,"1,254.23",£980.53,87.14,£112.23,£20.29,£228.32,"1,299.61",revenue,£,Standard order.
+26/06/2025,ORD-2025-0000178,"4K Monitor 27""",Toys,3,"EUR 1,147.06",EUR 862.88,29.77,EUR 52.91,EUR 27.56,233.48,"EUR 1,197.76",credit,EUR,Standard order.
+2026-09-28,ORD-2026-0000179,Niño Starter Kit,Kitchen,2,528.90,346.16,USD 18.06,48.70,USD 23.17,128.93,582.71,revenue,USD,Standard order.
+2024/05/11,ORD-2024-0000180,Niño Starter Kit,Fitness,7,31.93,19.28,1.99,1.09,€31.65,(18.10),€62.68,revenue,€,Standard order.
+2025-04-07,ORD-2025-0000181,Crème Brûlée Torch,Home,2,"EUR 1,161.30",846.04,5.07,77.58,EUR 30.16,212.59,"1,263.97",revenue,EUR,Standard order.
+2026-06-25,ORD-2026-0000182,Desk Lamp Max,Electronics,1,₹290.92,234.10,₹43.39,₹12.25,₹11.61,76.35,(62.79),debit,₹,Standard order.
+"Jun 20, 2024",ORD-2024-0000183,Desk Lamp Max,Kitchen,6,691.61,584.60,91.25,€45.96,31.33,€120.97,€677.65,revenue,€,Standard order.
+02/07/2025,ORD-2025-0000184,Wireless Earbuds Pro,Toys,3,"1,201.73",902.64,79.07,£64.23,£4.56,309.37,"1,191.45",credit,£,Standard order.
+12/14/2026,ORD-2026-0000185,Café Latte Mug,Electronics,7,306.52,£209.45,29.41,£11.12,£7.03,108.33,£295.26,revenue,£,Standard order.
+2024-02-28,ORD-2024-0000186,旅行 Backpack,Home,4,697.60,₹408.27,79.40,₹37.49,₹23.58,307.66,-₹147.53,debit,₹,Standard order.
+"Aug 4, 2025",ORD-2025-0000187,Mechanical Keyboard,Toys,5,"1,032.14",647.46 USD,121.51,87.86,20.71,397.62,"USD 1,019.20",credit,USD,"Customer asked: ""gift wrap, please""."
+05/09/2026,ORD-2026-0000188,Crème Brûlée Torch,Fitness,8,460.88,205.05,11.61,€27.66,€11.52,€228.26,€488.45,revenue,€,Standard order.
+13/08/2024,ORD-2024-0000189,Wireless Earbuds Pro,Fitness,5,₹801.13,₹603.52,₹3.09,₹49.94,1.23,₹149.53,₹849.21,revenue,₹,Standard order.
+17/02/2025,ORD-2025-0000190,Wireless Earbuds Pro,Fitness,2,915.81,681.50,₹65.24,₹65.17,6.45,227.93,₹922.19,credit,₹,Standard order.
+2026-02-17,ORD-2026-0000191,Crème Brûlée Torch,Toys,2,"$1,429.93","1,240.13",$92.42,$86.86,$0.56,194.80,"1,424.93",credit,$,Standard order.
+2024-11-24,ORD-2024-0000192,"4K Monitor 27""",Fitness,4,320.93,210.90,SAR 14.25,SAR 16.84,36.77,70.67,360.29,revenue,SAR,Standard order.
+"Jan 28, 2025",ORD-2025-0000193,"4K Monitor 27""",Toys,2,187.90,AUD 95.54,AUD 8.68,AUD 9.66,AUD 8.48,82.90 AUD,AUD 197.36,credit,AUD,Standard order.
+07/10/2026,ORD-2026-0000194,Mechanical Keyboard,Office,6,AUD 43.12,AUD 38.64,6.33,AUD 2.45,AUD 28.23,-19.87,AUD 67.47,revenue,AUD,Standard order.
+2024-01-22,ORD-2024-0000195,"4K Monitor 27""",Travel,3,348.49,AUD 161.34,AUD 17.82,10.68 AUD,AUD 8.71,AUD 185.58,AUD 350.06,revenue,AUD,Standard order.
+2025/05/07,ORD-2025-0000196,旅行 Backpack,Kitchen,6,£128.69,£114.76,5.28,£6.89,£37.37,-25.05,£167.67,revenue,£,Standard order.
+2026/10/25,ORD-2026-0000197,Wireless Earbuds Pro,Fitness,1,"1,201.85",960.45,£160.70,£67.00,11.82,£323.28,"1,119.97",revenue,£,Standard order.
+2024/06/12,ORD-2024-0000198,Crème Brûlée Torch,Fitness,1,160.79,118.19,€10.61,€10.88,€7.12,€35.21,€168.18,revenue,€,Standard order.
+2025-03-08,ORD-2025-0000199,Wireless Earbuds Pro,Home,,AED 893.55,733.78,71.87,28.76,29.45,AED 173.43,AED 879.89,credit,AED,Standard order.
+2026-10-07,ORD-2026-0000200,Desk Lamp Max,Office,7,715.69,435.10,€124.62,€27.29,€2.73,375.19,621.09,credit,€,Standard order.

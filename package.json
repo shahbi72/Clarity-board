@@ -5,6 +5,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
+    "fixtures:generate": "node scripts/generate-csv-fixtures.mjs",
     "lint": "eslint .",
     "start": "next start",
     "start:test": "next start --hostname 127.0.0.1 --port 3001",

@@ -1,0 +1,4 @@
+date,order_id,product_name,category,quantity,revenue,cost,discount,tax,shipping,profit,amount,type,currency,notes
+2026-02-10,INV-001,"Broken quote, line,Electronics,1,$500,$300,$10,$5,$15,$180,abc,revenue,$,"missing closing quote
+2026-02-11,INV-002,Missing Amount,Office,2,$200,$150,$0,$4,$6,$40,,expense,$,
+2026-02-12,INV-003,Text Amount,Home,1,$100,$80,$0,$2,$3,$15,N/A,revenue,$,invalid amount text
