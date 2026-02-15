@@ -6,8 +6,9 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:3001',
   },
   webServer: {
-    command: 'pnpm run start:test',
+    command: 'pnpm run build && pnpm run start:test',
     url: 'http://127.0.0.1:3001',
     reuseExistingServer: true,
+    timeout: 180_000,
   },
 })
