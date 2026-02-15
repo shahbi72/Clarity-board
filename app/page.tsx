@@ -250,7 +250,9 @@ export default function Page() {
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs">
                       <div className="text-muted-foreground">Transactions</div>
-                      <div className="text-base font-semibold">{totals.count}</div>
+                      <div className="text-base font-semibold" data-testid="dashboard-upload-transactions">
+                        {totals.count}
+                      </div>
                     </div>
                     <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs">
                       <div className="text-muted-foreground">Net cash</div>
