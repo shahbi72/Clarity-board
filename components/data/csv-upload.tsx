@@ -20,12 +20,16 @@ type UploadState = 'idle' | 'loading' | 'success' | 'error'
 
 const INITIAL_STATUS = 'Upload a CSV to see insights.'
 const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024
+const LARGE_FILE_HINT_BYTES = 10 * 1024 * 1024
+const LARGE_FILE_HINT_ROWS = 50_000
 
 export default function CsvUpload({ onLoaded }: Props) {
   const [status, setStatus] = React.useState<string>(INITIAL_STATUS)
   const [statusState, setStatusState] = React.useState<UploadState>('idle')
   const [fileName, setFileName] = React.useState<string>('')
   const [progress, setProgress] = React.useState<number>(0)
+  const [showLargeFileHint, setShowLargeFileHint] = React.useState(false)
+  const [showDateAmbiguityWarning, setShowDateAmbiguityWarning] = React.useState(false)
 
   const isLoading = statusState === 'loading'
 
@@ -36,6 +40,8 @@ export default function CsvUpload({ onLoaded }: Props) {
         setFileName(file.name)
         setStatusState('error')
         setProgress(0)
+        setShowLargeFileHint(false)
+        setShowDateAmbiguityWarning(false)
         setStatus(
           `File too large (${formatMegabytes(file.size)} MB). Starter uploads support up to ${formatMegabytes(
             MAX_FILE_SIZE_BYTES
@@ -47,8 +53,9 @@ export default function CsvUpload({ onLoaded }: Props) {
       setFileName(file.name)
       setStatusState('loading')
       setProgress(5)
+      setShowLargeFileHint(shouldShowLargeFileHint({ fileSizeBytes: file.size }))
+      setShowDateAmbiguityWarning(false)
       setStatus(`Parsing ${file.name}...`)
-      const startedAt = performance.now()
 
       try {
         const parsed = file.name.toLowerCase().match(/\.xlsx?$/)
@@ -59,16 +66,24 @@ export default function CsvUpload({ onLoaded }: Props) {
 
         if (parsed.txs.length === 0) {
           setStatusState('error')
+          setShowLargeFileHint(false)
+          setShowDateAmbiguityWarning(false)
           setStatus('No valid rows found. Include amount values and check your column formatting.')
           return
         }
 
         setStatusState('success')
-        setStatus(buildSuccessMessage(parsed.meta, performance.now() - startedAt))
+        setStatus(buildImportSummary(parsed.meta))
+        setShowLargeFileHint(
+          (previous) => previous || shouldShowLargeFileHint({ totalRows: parsed.meta.totalRows })
+        )
+        setShowDateAmbiguityWarning(shouldShowDateAmbiguityWarning(parsed.meta))
       } catch (error) {
         onLoaded([])
         setStatusState('error')
         setProgress(0)
+        setShowLargeFileHint(false)
+        setShowDateAmbiguityWarning(false)
         setStatus(getErrorMessage(error))
       }
     },
@@ -84,7 +99,7 @@ export default function CsvUpload({ onLoaded }: Props) {
           </div>
           <div className="text-base font-semibold text-foreground">Upload CSV or XLSX</div>
           <div className="text-sm text-muted-foreground">
-            Delimiters supported: comma, semicolon, or tab.
+            Delimiters: comma, semicolon, tab. Starter: max 25MB.
           </div>
         </div>
         <label
@@ -141,6 +156,28 @@ export default function CsvUpload({ onLoaded }: Props) {
           <span>{status}</span>
         </div>
       </div>
+
+      {showLargeFileHint && (
+        <div
+          className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-sm text-muted-foreground"
+          data-testid="csv-large-file-hint"
+          role="status"
+          aria-live="polite"
+        >
+          Large file detected—parsing may take a moment.
+        </div>
+      )}
+
+      {showDateAmbiguityWarning && (
+        <div
+          className="rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+          data-testid="csv-date-ambiguity-warning"
+          role="status"
+          aria-live="polite"
+        >
+          Some dates may be ambiguous (DD/MM vs MM/DD).
+        </div>
+      )}
 
       {isLoading && (
         <div className="space-y-2" data-testid="csv-upload-progress">
@@ -227,32 +264,25 @@ function parseXlsxFile(file: File, onProgress: (progress: number) => void): Prom
   })
 }
 
-function buildSuccessMessage(meta: CsvParseMeta, durationMs: number): string {
-  const rowLabel = meta.validRows === 1 ? 'row' : 'rows'
-  const detailParts: string[] = [`Loaded ${meta.validRows} ${rowLabel}.`]
+export function buildImportSummary(meta: Pick<CsvParseMeta, 'validRows' | 'skippedRows'>): string {
+  return `Imported ${meta.validRows} rows (skipped ${meta.skippedRows})`
+}
 
-  const delimiter = meta.delimiter === '\t' ? 'tab' : meta.delimiter === ';' ? 'semicolon' : 'comma'
-  detailParts.push(`Detected ${delimiter} delimiter.`)
+export function shouldShowDateAmbiguityWarning(
+  meta: Pick<CsvParseMeta, 'ambiguousDateRows' | 'totalRows'>
+): boolean {
+  if (meta.totalRows <= 0) return false
+  return meta.ambiguousDateRows >= 5 && meta.ambiguousDateRows / meta.totalRows >= 0.2
+}
 
-  if (meta.normalizedRows > 0) {
-    detailParts.push(`Padded ${meta.normalizedRows} short ${meta.normalizedRows === 1 ? 'row' : 'rows'}.`)
-  }
-  if (meta.skippedRows > 0) {
-    detailParts.push(`Skipped ${meta.skippedRows} invalid ${meta.skippedRows === 1 ? 'row' : 'rows'}.`)
-  }
-  if (meta.parseErrors > 0) {
-    detailParts.push(`Parser reported ${meta.parseErrors} format warning${meta.parseErrors === 1 ? '' : 's'}.`)
-  }
-  if (meta.ambiguousDateRows > 0) {
-    detailParts.push(
-      `Detected ambiguous day/month format in ${meta.ambiguousDateRows} ${
-        meta.ambiguousDateRows === 1 ? 'row' : 'rows'
-      }. Defaulted to month/day.`
-    )
-  }
-  detailParts.push(`Processed in ${(durationMs / 1000).toFixed(2)}s.`)
-
-  return detailParts.join(' ')
+export function shouldShowLargeFileHint(context: {
+  fileSizeBytes?: number
+  totalRows?: number
+}): boolean {
+  const largeBySize =
+    typeof context.fileSizeBytes === 'number' && context.fileSizeBytes > LARGE_FILE_HINT_BYTES
+  const largeByRows = typeof context.totalRows === 'number' && context.totalRows > LARGE_FILE_HINT_ROWS
+  return largeBySize || largeByRows
 }
 
 function getErrorMessage(error: unknown): string {
