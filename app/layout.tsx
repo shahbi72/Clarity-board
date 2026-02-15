@@ -30,11 +30,23 @@ export const viewport: Viewport = {
   ],
 }
 
+function getDeployEnvLabel(): 'Production' | 'Preview' {
+  const vercelEnv = process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.VERCEL_ENV
+  return vercelEnv === 'production' ? 'Production' : 'Preview'
+}
+
+function getShortCommitSha(): string {
+  return process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? 'local'
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const envLabel = getDeployEnvLabel()
+  const shortSha = getShortCommitSha()
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${workSans.variable} ${plexMono.variable} font-sans antialiased`}>
@@ -46,6 +58,12 @@ export default function RootLayout({
         >
           {children}
         </ThemeProvider>
+        <div
+          className="fixed bottom-2 right-2 z-50 rounded-md border border-border/60 bg-background/85 px-2 py-1 text-[10px] text-muted-foreground backdrop-blur"
+          data-testid="version-stamp"
+        >
+          {`Clarityboard · ${envLabel} · ${shortSha}`}
+        </div>
         <Analytics />
       </body>
     </html>

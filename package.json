@@ -11,6 +11,7 @@
     "start:test": "next start --hostname 127.0.0.1 --port 3001",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:prod": "PROD_URL=<url> pnpm test:e2e -- tests/e2e/prod-smoke.spec.ts",
     "test:watch": "vitest"
   },
   "dependencies": {
