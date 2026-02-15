@@ -14,13 +14,20 @@ export function calcDailyMetrics(txs: Tx[]): DailyMetrics {
   const productRevenue = new Map<string, number>()
 
   for (const tx of txs) {
-    if (tx.type === 'expense') {
-      expenses += tx.amount
+    const amount = sanitizeAmount(tx.amount)
+    if (amount == null) {
       continue
     }
-    revenue += tx.amount
-    if (tx.productName) {
-      productRevenue.set(tx.productName, (productRevenue.get(tx.productName) ?? 0) + tx.amount)
+
+    if (tx.type === 'expense') {
+      expenses += amount
+      continue
+    }
+    revenue += amount
+
+    const productName = normalizeProductName(tx.productName)
+    if (productName) {
+      productRevenue.set(productName, (productRevenue.get(productName) ?? 0) + amount)
     }
   }
 
@@ -40,4 +47,15 @@ export function calcDailyMetrics(txs: Tx[]): DailyMetrics {
     topProductName,
     topProductRevenue: topProductName ? topProductRevenue : undefined,
   }
+}
+
+function sanitizeAmount(value: unknown): number | null {
+  const numeric = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(numeric)) return null
+  return Math.abs(numeric)
+}
+
+function normalizeProductName(value: string | undefined): string | undefined {
+  const name = value?.trim()
+  return name ? name : undefined
 }
