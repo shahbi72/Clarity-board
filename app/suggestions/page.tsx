@@ -1,78 +1,385 @@
 'use client'
 
 import React from 'react'
-import CsvUpload from '@/components/data/csv-upload'
+import Link from 'next/link'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
+import {
+  AlertTriangle,
+  ArrowRight,
+  BadgeCheck,
+  Database,
+  FileCheck2,
+  Lightbulb,
+  Loader2,
+  RefreshCw,
+  TrendingUp,
+} from 'lucide-react'
+import { DashboardHeader } from '@/components/dashboard/dashboard-header'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import type {
+  ActiveDatasetMetadata,
+  ActiveDatasetResponse,
+  SuggestionsResponse,
+} from '@/lib/types/data-pipeline'
 
-type Tx = {
-  amount: number
-  type: 'revenue' | 'expense'
-  productName?: string
-  date?: string
-}
+const CHART_COLOR = '#2563eb'
 
-export default function Page() {
-  const [txs, setTxs] = React.useState<Tx[]>([])
-  const headers = ['type', 'amount', 'productName', 'date'] as const
+export default function SuggestionsPage() {
+  const [activeDataset, setActiveDataset] = React.useState<ActiveDatasetMetadata | null>(null)
+  const [suggestions, setSuggestions] = React.useState<SuggestionsResponse | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
 
-  const previewRows = React.useMemo(() => txs.slice(0, 100), [txs])
+  const loadSuggestions = React.useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const activeResponse = await fetch('/api/active-dataset', { cache: 'no-store' })
+      const activePayload = (await activeResponse.json()) as ActiveDatasetResponse | { error?: string }
+      if (!activeResponse.ok || !('dataset' in activePayload)) {
+        throw new Error(
+          activePayload && typeof activePayload === 'object' && 'error' in activePayload
+            ? activePayload.error || 'Failed to load active dataset.'
+            : 'Failed to load active dataset.'
+        )
+      }
+
+      setActiveDataset(activePayload.dataset)
+      if (!activePayload.dataset) {
+        setSuggestions(null)
+        return
+      }
+
+      const suggestionsResponse = await fetch('/api/suggestions', { cache: 'no-store' })
+      const suggestionsPayload = (await suggestionsResponse.json()) as SuggestionsResponse | { error?: string }
+      if (!suggestionsResponse.ok || !('summary' in suggestionsPayload)) {
+        throw new Error(
+          suggestionsPayload && typeof suggestionsPayload === 'object' && 'error' in suggestionsPayload
+            ? suggestionsPayload.error || 'Failed to load smart suggestions.'
+            : 'Failed to load smart suggestions.'
+        )
+      }
+
+      setSuggestions(suggestionsPayload)
+    } catch (loadError) {
+      const message =
+        loadError instanceof Error ? loadError.message : 'Failed to load smart suggestions.'
+      setError(message)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    void loadSuggestions()
+  }, [loadSuggestions])
 
   return (
-    <main className="mx-auto max-w-6xl space-y-6 p-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">Clarity Board</h1>
-        <p className="text-sm text-muted-foreground">
-          Upload any CSV. We&apos;ll show the columns + a preview. Then we can generate insights.
-        </p>
-      </div>
-
-      <CsvUpload onLoaded={setTxs} />
-
-      <div className="rounded-xl border p-4 text-sm">
-        <div><span className="font-semibold">Columns:</span> {headers.length}</div>
-        <div><span className="font-semibold">Rows:</span> {txs.length}</div>
-      </div>
-
-      <div className="rounded-xl border p-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="text-sm font-semibold">Preview (first {previewRows.length} rows)</div>
-          <div className="text-xs text-muted-foreground">
-            Tip: If you don&apos;t see your data, your CSV might be using &ldquo;;&rdquo; delimiter.
-          </div>
-        </div>
-
-        {txs.length === 0 ? (
-          <div className="text-sm text-muted-foreground">Upload a CSV to see preview.</div>
+    <div className="min-h-full">
+      <DashboardHeader
+        title="Smart Suggestions"
+        description="AI recommendations based on your active dataset"
+      />
+      <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6">
+        {isLoading ? (
+          <Card className="min-h-56">
+            <CardContent className="flex min-h-56 items-center justify-center text-muted-foreground">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Loading Smart Suggestions...
+            </CardContent>
+          </Card>
+        ) : error ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Unable to Load Suggestions</CardTitle>
+              <CardDescription>{error}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => void loadSuggestions()}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        ) : !activeDataset ? (
+          <Card className="border-dashed border-border/80 bg-white">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-5 w-5 text-muted-foreground" />
+                No Active Dataset
+              </CardTitle>
+              <CardDescription>
+                Smart Suggestions runs on your active dataset. Upload one and activate it to start.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-3">
+              <Button asChild>
+                <Link href="/upload">
+                  Upload Data
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/datasets">Manage Datasets</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : !suggestions ? (
+          <Card>
+            <CardContent className="py-8 text-sm text-muted-foreground">
+              Suggestions are unavailable right now.
+            </CardContent>
+          </Card>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="text-left text-muted-foreground">
-                <tr className="border-b">
-                  {headers.map((h) => (
-                    <th key={h} className="py-2 pr-4 whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {previewRows.map((r, i) => (
-                  <tr key={i} className="border-b">
-                    {headers.map((h) => (
-                      <td key={h} className="py-2 pr-4 whitespace-nowrap">
-                        {h === 'productName'
-                          ? r.productName ?? ''
-                          : h === 'date'
-                            ? r.date ?? ''
-                            : h === 'type'
-                              ? r.type
-                              : r.amount.toFixed(2)}
-                      </td>
+          <>
+            <section className="rounded-2xl border border-border/70 bg-white p-5 shadow-sm">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold tracking-tight text-foreground">
+                    Smart Suggestions
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Analyst-style recommendations generated from your active dataset.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">
+                    Active dataset: {activeDataset.name}
+                  </Badge>
+                  <Button variant="outline" size="sm" onClick={() => void loadSuggestions()}>
+                    <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                    Refresh
+                  </Button>
+                </div>
+              </div>
+            </section>
+
+            <section className="grid gap-6 lg:grid-cols-2">
+              <Card className="border-border/70 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <BadgeCheck className="h-4 w-4 text-blue-600" />
+                    Executive Summary
+                  </CardTitle>
+                  <CardDescription>
+                    Key findings from dataset {activeDataset.name}.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 text-sm text-foreground">
+                    {suggestions.summary.bullets.map((bullet, index) => (
+                      <li key={`${bullet}-${index}`} className="rounded-lg bg-slate-50 px-3 py-2">
+                        {bullet}
+                      </li>
                     ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border/70 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <FileCheck2 className="h-4 w-4 text-blue-600" />
+                    Data Quality Checks
+                  </CardTitle>
+                  <CardDescription>
+                    Missing fields, duplicates, invalid dates, and outliers.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <QualityStat label="Duplicates" value={suggestions.quality.duplicateCount} />
+                    <QualityStat label="Invalid dates" value={suggestions.quality.invalidDates} />
+                    <QualityStat label="Outliers" value={suggestions.quality.outlierCount} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                      Missing Fields
+                    </p>
+                    {suggestions.quality.missingFields.length > 0 ? (
+                      suggestions.quality.missingFields.slice(0, 4).map((field) => (
+                        <div
+                          key={field.column}
+                          className="flex items-center justify-between rounded-lg border border-border/60 bg-slate-50 px-3 py-2 text-sm"
+                        >
+                          <span className="text-foreground">{field.column}</span>
+                          <span className="text-muted-foreground">
+                            {field.missingCount.toLocaleString()} missing ({(field.missingRate * 100).toFixed(1)}%)
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        No missing field signal detected.
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+
+            <section className="grid gap-6 lg:grid-cols-2">
+              <Card className="border-border/70 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <TrendingUp className="h-4 w-4 text-blue-600" />
+                    Trend Insights
+                  </CardTitle>
+                  <CardDescription>
+                    MoM growth based on detected date + metric columns.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="h-[320px]">
+                  {suggestions.trends.timeseries.length > 1 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={suggestions.trends.timeseries}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="date" />
+                        <YAxis tickFormatter={(value) => compactCurrency(Number(value))} />
+                        <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke={CHART_COLOR}
+                          strokeWidth={2}
+                          dot={{ r: 3 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <ChartFallback message="Not enough date + metric data for monthly trend chart." />
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border-border/70 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <AlertTriangle className="h-4 w-4 text-blue-600" />
+                    Top Categories
+                  </CardTitle>
+                  <CardDescription>
+                    Highest contributing segments from your active dataset.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="h-[320px]">
+                  {suggestions.topCategories.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={suggestions.topCategories}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="name" interval={0} angle={-16} height={60} textAnchor="end" />
+                        <YAxis tickFormatter={(value) => compactCurrency(Number(value))} />
+                        <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                        <Bar dataKey="value" fill={CHART_COLOR} radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <ChartFallback message="Not enough category + metric data for category chart." />
+                  )}
+                </CardContent>
+              </Card>
+            </section>
+
+            <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+              <Card className="border-border/70 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Lightbulb className="h-4 w-4 text-blue-600" />
+                    Recommendations
+                  </CardTitle>
+                  <CardDescription>Actionable next steps from deterministic analytics.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 text-sm text-foreground">
+                    {suggestions.recommendations.map((recommendation, index) => (
+                      <li key={`${recommendation}-${index}`} className="rounded-lg border border-border/60 bg-slate-50 px-3 py-2">
+                        {recommendation}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border/70 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-base">Detected Signals</CardTitle>
+                  <CardDescription>Column mapping used to generate insights.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <SignalRow label="Date column" value={suggestions.mappings.dateColumn} />
+                  <SignalRow label="Metric column" value={suggestions.mappings.primaryMetricColumn} />
+                  <SignalRow label="Category column" value={suggestions.mappings.categoryColumn} />
+                  <SignalRow
+                    label="Numeric columns"
+                    value={
+                      suggestions.mappings.numericColumns.length > 0
+                        ? suggestions.mappings.numericColumns.join(', ')
+                        : null
+                    }
+                  />
+                </CardContent>
+              </Card>
+            </section>
+          </>
         )}
-      </div>
-    </main>
+      </main>
+    </div>
   )
+}
+
+function QualityStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-slate-50 p-3">
+      <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className="mt-1 text-xl font-semibold text-foreground">{value.toLocaleString()}</div>
+    </div>
+  )
+}
+
+function SignalRow({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-slate-50 px-3 py-2">
+      <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className="mt-1 font-medium text-foreground">{value || 'Not detected'}</div>
+    </div>
+  )
+}
+
+function ChartFallback({ message }: { message: string }) {
+  return (
+    <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border bg-slate-50 px-4 text-center text-sm text-muted-foreground">
+      {message}
+    </div>
+  )
+}
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 2,
+  }).format(value)
+}
+
+function compactCurrency(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(value)
 }

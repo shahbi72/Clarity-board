@@ -143,7 +143,10 @@ export function parseRowsFromHeader(rows: Record<string, string>[], context?: Pa
         context.ambiguousDateRows += 1
       }
 
-      return { amount: Math.abs(amount), type, productName, date: dateResult.value }
+      const tx: Tx = { amount: Math.abs(amount), type }
+      if (productName) tx.productName = productName
+      if (dateResult.value) tx.date = dateResult.value
+      return tx
     })
     .filter((row): row is Tx => row !== null)
 }
@@ -196,12 +199,13 @@ export function parseRowsFromNoHeader(rows: string[][], context?: ParseContext):
 
       if (amount == null) return null
 
-      return {
+      const tx: Tx = {
         amount: Math.abs(amount),
         type: type ?? (amount < 0 ? 'expense' : 'revenue'),
-        productName,
-        date,
       }
+      if (productName) tx.productName = productName
+      if (date) tx.date = date
+      return tx
     })
     .filter((row): row is Tx => row !== null)
 }

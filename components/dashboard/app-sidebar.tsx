@@ -19,26 +19,14 @@ import {
   Package,
   Shield,
 } from 'lucide-react'
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInput,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarSeparator,
-} from '@/components/ui/sidebar'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 
 const mainNavItems = [
   {
     title: 'Dashboard',
-    href: '/',
+    href: '/dashboard',
     icon: LayoutDashboard,
   },
   {
@@ -111,148 +99,168 @@ const settingsNavItems = [
   },
 ]
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  className?: string
+  onNavigate?: () => void
+}
+
+function isActivePath(pathname: string, href: string) {
+  if (href === '/') return pathname === href
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
+
+export function AppSidebar({ className, onNavigate }: AppSidebarProps) {
   const pathname = usePathname()
 
   return (
-    <Sidebar
-      variant="floating"
-      className="border border-sidebar-border/70 bg-sidebar/95 shadow-[0_18px_36px_-26px_rgba(15,23,42,0.18)]"
-    >
-      <SidebarHeader className="border-b border-sidebar-border/60 px-4 py-4">
+    <aside className={cn('flex h-full flex-col bg-white', className)}>
+      <div className="border-b border-slate-200/70 px-5 py-5">
         <Link href="/" className="flex items-center gap-3">
-          <div className="icon-chip icon-chip-primary h-10 w-10">
+          <div className="icon-chip icon-chip-primary h-9 w-9">
             <Sparkles className="h-5 w-5" />
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-semibold text-sidebar-foreground">Clarityboard</span>
-            <span className="text-xs text-muted-foreground">Accounting overview</span>
+            <span className="text-base font-semibold text-slate-900">Clarityboard</span>
+            <span className="text-xs text-slate-500">Accounting overview</span>
           </div>
         </Link>
-      </SidebarHeader>
+      </div>
 
-      <SidebarContent>
-        <div className="px-4 pt-4">
+      <div className="flex-1 space-y-6 overflow-y-auto px-4 py-5">
+        <div>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <SidebarInput placeholder="Search reports, invoices..." className="pl-9 text-sm" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Search reports, invoices..."
+              className="h-9 rounded-lg border-slate-200 bg-slate-50 pl-9 text-sm"
+            />
           </div>
         </div>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
+        <section className="space-y-2">
+          <h2 className="px-2 text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
+            Dashboard
+          </h2>
+          <nav className="space-y-1" aria-label="Dashboard">
               {mainNavItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                    className="rounded-lg px-3 py-2 text-sm data-[active=true]:bg-primary/10 data-[active=true]:text-foreground"
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavigate}
+                  className={cn(
+                    'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900',
+                    isActivePath(pathname, item.href) && 'bg-blue-50 text-blue-700'
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'icon-chip h-8 w-8',
+                      isActivePath(pathname, item.href) ? 'icon-chip-primary' : 'icon-chip-muted'
+                    )}
                   >
-                    <Link href={item.href}>
-                      <span
-                        className={`icon-chip h-8 w-8 ${pathname === item.href ? 'icon-chip-primary' : 'icon-chip-muted'}`}
-                      >
-                        <item.icon className="h-4 w-4" />
-                      </span>
-                      <span>{item.title}</span>
-                      {item.badge && (
-                        <Badge variant="secondary" className="ml-auto text-xs">
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                    <item.icon className="h-4 w-4" />
+                  </span>
+                  <span>{item.title}</span>
+                  {item.badge && (
+                    <Badge variant="secondary" className="ml-auto rounded-md bg-slate-100 text-xs text-slate-600">
+                      {item.badge}
+                    </Badge>
+                  )}
+                </Link>
               ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+          </nav>
+        </section>
 
-        <SidebarSeparator />
+        <div className="border-t border-slate-200/70" />
 
-        <SidebarGroup>
-          <SidebarGroupLabel>AI Tools</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
+        <section className="space-y-2">
+          <h2 className="px-2 text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
+            AI Tools
+          </h2>
+          <nav className="space-y-1" aria-label="AI tools">
               {aiNavItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                    className="rounded-lg px-3 py-2 text-sm data-[active=true]:bg-primary/10 data-[active=true]:text-foreground"
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavigate}
+                  className={cn(
+                    'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900',
+                    isActivePath(pathname, item.href) && 'bg-blue-50 text-blue-700'
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'icon-chip h-8 w-8',
+                      isActivePath(pathname, item.href) ? 'icon-chip-primary' : 'icon-chip-muted'
+                    )}
                   >
-                    <Link href={item.href}>
-                      <span
-                        className={`icon-chip h-8 w-8 ${pathname === item.href ? 'icon-chip-primary' : 'icon-chip-muted'}`}
-                      >
-                        <item.icon className="h-4 w-4" />
-                      </span>
-                      <span>{item.title}</span>
-                      {item.badge && (
-                        <Badge variant="secondary" className="ml-auto text-xs">
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                    <item.icon className="h-4 w-4" />
+                  </span>
+                  <span>{item.title}</span>
+                  {item.badge && (
+                    <Badge variant="secondary" className="ml-auto rounded-md bg-slate-100 text-xs text-slate-600">
+                      {item.badge}
+                    </Badge>
+                  )}
+                </Link>
               ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+          </nav>
+        </section>
 
-        <SidebarSeparator />
+        <div className="border-t border-slate-200/70" />
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Pages</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
+        <section className="space-y-2">
+          <h2 className="px-2 text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
+            Pages
+          </h2>
+          <nav className="space-y-1" aria-label="Pages">
               {settingsNavItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                    className="rounded-lg px-3 py-2 text-sm data-[active=true]:bg-primary/10 data-[active=true]:text-foreground"
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavigate}
+                  className={cn(
+                    'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900',
+                    isActivePath(pathname, item.href) && 'bg-blue-50 text-blue-700'
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'icon-chip h-8 w-8',
+                      isActivePath(pathname, item.href) ? 'icon-chip-accent' : 'icon-chip-muted'
+                    )}
                   >
-                    <Link href={item.href}>
-                      <span
-                        className={`icon-chip h-8 w-8 ${pathname === item.href ? 'icon-chip-accent' : 'icon-chip-muted'}`}
-                      >
-                        <item.icon className="h-4 w-4" />
-                      </span>
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                    <item.icon className="h-4 w-4" />
+                  </span>
+                  <span>{item.title}</span>
+                </Link>
               ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
+          </nav>
+        </section>
+      </div>
 
-      <SidebarFooter className="border-t border-sidebar-border/60 p-4">
+      <div className="border-t border-slate-200/70 p-4">
         <div className="space-y-4">
           <Link
             href="/pricing"
+            onClick={onNavigate}
             className="block rounded-xl bg-primary px-4 py-3 text-center text-xs font-semibold tracking-[0.14em] text-primary-foreground shadow-[0_18px_40px_-30px_rgba(30,64,175,0.35)] transition hover:bg-primary/90"
           >
             Upgrade plan
           </Link>
-          <div className="flex items-center gap-3 rounded-xl border border-sidebar-border/70 bg-card p-3">
+          <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
             <img
               src="/placeholder-user.jpg"
               alt="User avatar"
               className="h-9 w-9 rounded-full object-cover"
             />
             <div>
-              <div className="text-sm font-medium text-sidebar-foreground">John Carter</div>
-              <div className="text-xs text-muted-foreground">Account settings</div>
+              <div className="text-sm font-medium text-slate-900">John Carter</div>
+              <div className="text-xs text-slate-500">Account settings</div>
             </div>
           </div>
         </div>
-      </SidebarFooter>
-    </Sidebar>
+      </div>
+    </aside>
   )
 }

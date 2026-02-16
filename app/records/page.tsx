@@ -2,8 +2,6 @@
 
 import { useState } from 'react'
 import { Search, Download, Filter, ChevronLeft, ChevronRight } from 'lucide-react'
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
-import { AppSidebar } from '@/components/dashboard/app-sidebar'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -34,14 +32,12 @@ export default function RecordsPage() {
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <DashboardHeader
-          title="Records"
-          description="View and manage all your business records"
-        />
-        <main className="flex-1 p-4 md:p-6">
+    <div className="min-h-full">
+      <DashboardHeader
+        title="Records"
+        description="View and manage all your business records"
+      />
+      <main className="flex-1 p-4 md:p-6">
           <Card>
             <CardHeader>
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -116,8 +112,7 @@ export default function RecordsPage() {
               </div>
             </CardContent>
           </Card>
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+      </main>
+    </div>
   )
 }

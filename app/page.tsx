@@ -1,327 +1,460 @@
 'use client'
 
 import React from 'react'
-import CsvUpload from '@/components/data/csv-upload'
-import CsvPreview from '@/components/CsvPreview'
-import CsvDataTable from '@/components/CsvDataTable'
-import { AppSidebar } from '@/components/dashboard/app-sidebar'
-import { DatasetStatus } from '@/components/dashboard/dataset-status'
-import { KPICards } from '@/components/dashboard/kpi-cards'
-import { AIAssistantCard } from '@/components/dashboard/ai-assistant-card'
-import { NotificationsPanel } from '@/components/dashboard/notifications-panel'
-import dynamic from 'next/dynamic'
-import { SuggestionsPanel } from '@/components/dashboard/suggestions-panel'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { calcDailyMetrics } from '@/lib/metrics'
+import Link from 'next/link'
 import {
-  mockChartData,
-  mockDatasets,
-  mockKPIData,
-  mockNotifications,
-  mockSuggestions,
-  type ChartDataPoint,
-  type KPIData,
-} from '@/lib/mock-data'
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
+import {
+  Database,
+  Loader2,
+  RefreshCw,
+  UploadCloud,
+  Wallet,
+  TrendingDown,
+  TrendingUp,
+  Landmark,
+} from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { DatasetUploader } from '@/components/data/dataset-uploader'
+import { useToast } from '@/hooks/use-toast'
+import type {
+  DashboardSummaryResponse,
+  DataRow,
+  UploadDatasetResponse,
+} from '@/lib/types/data-pipeline'
 
-const RevenueChart = dynamic(
-  () =>
-    import('@/components/dashboard/revenue-chart').then(
-      (mod) => mod.RevenueChart
-    ),
-  { ssr: false }
-)
+const PIE_COLORS = ['#2563eb', '#0ea5e9', '#14b8a6', '#6366f1', '#f59e0b', '#ef4444']
 
-type Tx = {
-  amount: number
-  type: 'revenue' | 'expense'
-  productName?: string
-  date?: string
+export default function DashboardPage() {
+  const { toast } = useToast()
+  const [summary, setSummary] = React.useState<DashboardSummaryResponse | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+
+  const loadSummary = React.useCallback(async (datasetId?: string) => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const query = datasetId ? `?datasetId=${encodeURIComponent(datasetId)}` : ''
+      const response = await fetch(`/api/dashboard/summary${query}`, { cache: 'no-store' })
+      const payload = (await response.json()) as DashboardSummaryResponse | { error?: string }
+      if (!response.ok) {
+        throw new Error(
+          payload && typeof payload === 'object' && 'error' in payload
+            ? payload.error || 'Failed to load dashboard.'
+            : 'Failed to load dashboard.'
+        )
+      }
+
+      setSummary(payload as DashboardSummaryResponse)
+    } catch (loadError) {
+      const message = loadError instanceof Error ? loadError.message : 'Failed to load dashboard.'
+      setError(message)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    void loadSummary()
+  }, [loadSummary])
+
+  const handleUploadSuccess = (payload: UploadDatasetResponse) => {
+    toast({
+      title: 'Dataset uploaded',
+      description: `${payload.datasetName} is now active on your dashboard.`,
+    })
+    void loadSummary(payload.datasetId)
+  }
+
+  const previewColumns = React.useMemo(() => {
+    const firstRow = summary?.previewRows?.[0]
+    if (firstRow) {
+      return Object.keys(firstRow).slice(0, 12)
+    }
+    return summary?.dataset?.columns?.slice(0, 12) ?? []
+  }, [summary])
+
+  if (isLoading) {
+    return (
+      <main className="mx-auto max-w-7xl p-6">
+        <Card className="min-h-56">
+          <CardContent className="flex h-full min-h-56 items-center justify-center text-muted-foreground">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Loading dashboard...
+          </CardContent>
+        </Card>
+      </main>
+    )
+  }
+
+  if (error) {
+    return (
+      <main className="mx-auto max-w-7xl space-y-6 p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Dashboard Unavailable</CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => void loadSummary()}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
+    )
+  }
+
+  if (!summary || !summary.dataset) {
+    return (
+      <main className="mx-auto max-w-7xl space-y-6 p-6">
+        <Card className="border-dashed">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Database className="h-5 w-5 text-muted-foreground" />
+              No Active Dataset
+            </CardTitle>
+            <CardDescription>
+              Upload and activate a dataset to unlock dashboard metrics and charts.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/upload">
+                <UploadCloud className="mr-2 h-4 w-4" />
+                Upload data
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/datasets">Open datasets</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <DatasetUploader onUploadSuccess={handleUploadSuccess} />
+      </main>
+    )
+  }
+
+  return (
+    <main className="mx-auto max-w-7xl space-y-6 p-6">
+      <section className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="space-y-1">
+          <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+            Active Dataset
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight">{summary.dataset.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            {summary.metrics.rowCount.toLocaleString()} rows • {summary.metrics.columnCount} columns
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary">{summary.dataset.fileType}</Badge>
+          <Button variant="outline" onClick={() => void loadSummary()}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          title="Total Revenue"
+          value={summary.metrics.totalRevenue}
+          icon={TrendingUp}
+          tone="text-emerald-700"
+        />
+        <MetricCard
+          title="Total Expenses"
+          value={summary.metrics.totalExpenses}
+          icon={TrendingDown}
+          tone="text-rose-700"
+        />
+        <MetricCard
+          title="Net Profit"
+          value={summary.metrics.netProfit}
+          icon={Wallet}
+          tone={summary.metrics.netProfit >= 0 ? 'text-emerald-700' : 'text-rose-700'}
+        />
+        <MetricCard
+          title="Cash In/Out"
+          value={summary.metrics.cashIn - summary.metrics.cashOut}
+          subtitle={`${formatCurrency(summary.metrics.cashIn)} in • ${formatCurrency(summary.metrics.cashOut)} out`}
+          icon={Landmark}
+          tone="text-slate-700"
+          valueTestId="dashboard-upload-transactions"
+        />
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-2">
+        <Card className="border-border/60 bg-card shadow-sm">
+          <CardHeader>
+            <CardTitle>Revenue vs Expenses (Monthly)</CardTitle>
+            <CardDescription>
+              Trend view using mapped date + amount columns.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="h-[320px]">
+            {summary.charts.monthlySeries.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={summary.charts.monthlySeries}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="label" />
+                  <YAxis tickFormatter={(value) => compactCurrency(value)} />
+                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                  <Legend />
+                  <Line type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={2} />
+                  <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <FallbackText message={summary.fallback.monthlySeries} />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 bg-card shadow-sm">
+          <CardHeader>
+            <CardTitle>Top Products / Categories</CardTitle>
+            <CardDescription>
+              Highest contributors based on mapped product/customer/category columns.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="h-[320px]">
+            {summary.charts.topItems.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={summary.charts.topItems}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" interval={0} angle={-20} height={70} textAnchor="end" />
+                  <YAxis tickFormatter={(value) => compactCurrency(value)} />
+                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                  <Bar dataKey="value" fill="#2563eb" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <FallbackText message={summary.fallback.topItems} />
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+        <Card className="border-border/60 bg-card shadow-sm">
+          <CardHeader>
+            <CardTitle>Expense Breakdown</CardTitle>
+            <CardDescription>Category split of detected expenses.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[320px]">
+            {summary.charts.expenseBreakdown.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                  <Legend />
+                  <Pie
+                    data={summary.charts.expenseBreakdown}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    innerRadius={56}
+                    paddingAngle={3}
+                  >
+                    {summary.charts.expenseBreakdown.map((entry, index) => (
+                      <Cell key={entry.name} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <FallbackText message={summary.fallback.expenseBreakdown} />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 bg-card shadow-sm">
+          <CardHeader>
+            <CardTitle>Upload and Recompute</CardTitle>
+            <CardDescription>
+              Uploading here persists the dataset and refreshes dashboard immediately.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DatasetUploader onUploadSuccess={handleUploadSuccess} submitLabel="Upload & refresh" />
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
+        <Card className="border-border/60 bg-card shadow-sm">
+          <CardHeader>
+            <CardTitle>Recent Transactions</CardTitle>
+            <CardDescription>Latest rows sorted by date (or row order fallback).</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {summary.recentTransactions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Not enough data to build a transaction table yet.
+              </p>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-left text-xs uppercase tracking-[0.15em] text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2">Date</th>
+                      <th className="px-3 py-2">Description</th>
+                      <th className="px-3 py-2">Category</th>
+                      <th className="px-3 py-2">Type</th>
+                      <th className="px-3 py-2 text-right">Revenue</th>
+                      <th className="px-3 py-2 text-right">Expense</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {summary.recentTransactions.map((transaction) => (
+                      <tr key={transaction.rowIndex} className="border-t">
+                        <td className="px-3 py-2">{transaction.date ?? '-'}</td>
+                        <td className="px-3 py-2">{transaction.description ?? '-'}</td>
+                        <td className="px-3 py-2">{transaction.category ?? '-'}</td>
+                        <td className="px-3 py-2 capitalize">{transaction.type}</td>
+                        <td className="px-3 py-2 text-right">{formatCurrency(transaction.revenue)}</td>
+                        <td className="px-3 py-2 text-right">{formatCurrency(transaction.expense)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 bg-card shadow-sm">
+          <CardHeader>
+            <CardTitle>Dataset Preview</CardTitle>
+            <CardDescription>Always available fallback when chart mapping is incomplete.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">Columns</div>
+              <div className="flex flex-wrap gap-2">
+                {summary.dataset.columns.slice(0, 16).map((column) => (
+                  <Badge key={column} variant="outline">
+                    {column}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {summary.previewRows.length > 0 ? (
+              <div className="overflow-x-auto rounded-lg border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-left text-xs uppercase tracking-[0.15em] text-muted-foreground">
+                    <tr>
+                      {previewColumns.map((column) => (
+                        <th key={column} className="px-3 py-2 whitespace-nowrap">
+                          {column}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {summary.previewRows.slice(0, 10).map((row, index) => (
+                      <tr key={index} className="border-t">
+                        {previewColumns.map((column) => (
+                          <td key={`${index}-${column}`} className="px-3 py-2">
+                            {formatCellValue((row as DataRow)[column])}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No preview rows available.</p>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+    </main>
+  )
 }
 
-function formatMoney(value: number): string {
+function MetricCard({
+  title,
+  value,
+  subtitle,
+  tone,
+  icon: Icon,
+  valueTestId,
+}: {
+  title: string
+  value: number
+  subtitle?: string
+  tone?: string
+  icon: React.ComponentType<{ className?: string }>
+  valueTestId?: string
+}) {
+  return (
+    <Card className="border-border/60 bg-card shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className={`text-2xl font-semibold ${tone ?? 'text-foreground'}`} data-testid={valueTestId}>
+          {formatCurrency(value)}
+        </div>
+        {subtitle && <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>}
+      </CardContent>
+    </Card>
+  )
+}
+
+function FallbackText({ message }: { message: string | null }) {
+  return (
+    <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 px-4 text-center text-sm text-muted-foreground">
+      {message ?? 'Not enough data for this chart.'}
+    </div>
+  )
+}
+
+function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value)
 }
 
-function buildInsightMessage(txs: Tx[]): string {
-  if (txs.length === 0) return "Upload a CSV to see today's insight."
-  const insight = calcDailyMetrics(txs)
-
-  const profitText = `Today your profit is ${formatMoney(insight.profit)}.`
-  const summaryText = `Revenue ${formatMoney(insight.revenue)} vs expenses ${formatMoney(
-    insight.expenses
-  )}.`
-
-  if (!insight.topProductName) return `${profitText} ${summaryText}`
-
-  const topText =
-    insight.topProductRevenue != null
-      ? `${insight.topProductName} leads with ${formatMoney(insight.topProductRevenue)} in revenue.`
-      : `${insight.topProductName} is your best-performing product.`
-
-  return `${profitText} ${summaryText} ${topText}`
+function compactCurrency(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(value)
 }
 
-export default function Page() {
-  const [txs, setTxs] = React.useState<Tx[]>([])
-
-  const totals = React.useMemo(() => {
-    let revenue = 0
-    let expense = 0
-    for (const tx of txs) {
-      if (tx.type === 'expense') expense += tx.amount
-      else revenue += tx.amount
-    }
-    return { revenue, expense, net: revenue - expense, count: txs.length }
-  }, [txs])
-
-  const insight = React.useMemo(() => calcDailyMetrics(txs), [txs])
-  const insightMessage = React.useMemo(() => buildInsightMessage(txs), [txs])
-
-  const kpiData = React.useMemo<KPIData>(() => {
-    if (txs.length === 0) return mockKPIData
-    const profit = totals.net
-    const loss = profit < 0 ? Math.abs(profit) : 0
-
-    return {
-      totalRevenue: totals.revenue,
-      totalExpenses: totals.expense,
-      totalProfit: totals.net,
-      totalLoss: loss,
-      todayRevenue: totals.revenue,
-      todayExpenses: totals.expense,
-      todayProfit: totals.net,
-      todayLoss: loss,
-      weeklyProfit: totals.net,
-      monthlyProfit: totals.net,
-      revenueChange: 0,
-      expensesChange: 0,
-      profitChange: 0,
-    }
-  }, [totals, txs.length])
-
-  const chartData = React.useMemo<ChartDataPoint[]>(() => {
-    if (txs.length === 0) return mockChartData
-
-    const buckets = new Map<
-      string,
-      { revenue: number; expenses: number; timestamp: number }
-    >()
-
-    for (const tx of txs) {
-      if (!tx.date) continue
-      const parsedDate = new Date(tx.date)
-      const isValidDate = !Number.isNaN(parsedDate.getTime())
-      const label = isValidDate
-        ? parsedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        : tx.date
-      const timestamp = isValidDate ? parsedDate.getTime() : 0
-      const bucket = buckets.get(label) ?? { revenue: 0, expenses: 0, timestamp }
-
-      if (tx.type === 'expense') bucket.expenses += tx.amount
-      else bucket.revenue += tx.amount
-
-      buckets.set(label, bucket)
-    }
-
-    if (buckets.size === 0) return mockChartData
-
-    return Array.from(buckets.entries())
-      .map(([date, values]) => ({
-        date,
-        revenue: Math.round(values.revenue),
-        expenses: Math.round(values.expenses),
-        profit: Math.round(values.revenue - values.expenses),
-        timestamp: values.timestamp,
-      }))
-      .sort((a, b) => a.timestamp - b.timestamp)
-      .map(({ timestamp: _timestamp, ...rest }) => rest)
-  }, [txs])
-
-  return (
-    <SidebarProvider>
-      <div className="relative min-h-screen w-full">
-        <AppSidebar />
-        <SidebarInset className="bg-transparent">
-          <main className="relative mx-auto flex max-w-6xl flex-col gap-8 px-6 py-8">
-            <section className="flex flex-col gap-6 rounded-3xl border border-border bg-card p-6 shadow-sm elite-rise">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="space-y-3">
-                  <div className="md:hidden">
-                    <SidebarTrigger className="h-9 w-9 rounded-full border border-border bg-white" />
-                  </div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                    Business snapshot
-                  </div>
-                  <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                    Good morning, Shahbaz
-                  </h1>
-                  <p className="text-sm text-muted-foreground sm:text-base">
-                    Track cash flow, invoices, and expenses with a clean bookkeeping overview.
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button
-                    variant="secondary"
-                    className="rounded-full border border-border bg-white text-xs font-semibold"
-                  >
-                    Connect bank
-                  </Button>
-                  <Button className="rounded-full text-xs font-semibold">
-                    Create invoice
-                  </Button>
-                </div>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-border bg-muted/30 p-4">
-                  <div className="text-xs text-muted-foreground">Cash in today</div>
-                  <div className="text-xl font-semibold">{formatMoney(totals.revenue)}</div>
-                </div>
-                <div className="rounded-2xl border border-border bg-muted/30 p-4">
-                  <div className="text-xs text-muted-foreground">Cash out today</div>
-                  <div className="text-xl font-semibold">{formatMoney(totals.expense)}</div>
-                </div>
-                <div className="rounded-2xl border border-primary/30 bg-primary/10 p-4">
-                  <div className="text-xs text-muted-foreground">Net cash</div>
-                  <div className="text-xl font-semibold">{formatMoney(totals.net)}</div>
-                </div>
-              </div>
-            </section>
-
-            <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] elite-rise" style={{ animationDelay: '0.05s' }}>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="/clarityboard-logo.png"
-                    alt="Clarityboard"
-                    className="h-8 w-auto"
-                  />
-                  <div>
-                    <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                      Clarityboard
-                    </div>
-                    <div className="text-sm font-semibold">Daily cash flow</div>
-                  </div>
-                </div>
-
-                <Card className="border-border/60 bg-card shadow-sm elite-card">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Today&apos;s insight
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4 text-sm font-medium">
-                    <p>{insightMessage}</p>
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs">
-                        <div className="text-muted-foreground">Transactions</div>
-                        <div className="text-base font-semibold">{totals.count}</div>
-                      </div>
-                      <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs">
-                        <div className="text-muted-foreground">Top product</div>
-                        <div className="text-base font-semibold">
-                          {insight.topProductName ?? '\u2014'}
-                        </div>
-                      </div>
-                      <div className="rounded-lg border border-border bg-primary/10 p-3 text-xs">
-                        <div className="text-muted-foreground">Profit</div>
-                        <div className="text-base font-semibold">{formatMoney(insight.profit)}</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card className="border-border/60 bg-card shadow-sm elite-card">
-                <CardHeader className="pb-3">
-                  <CardTitle>Import transactions</CardTitle>
-                  <CardDescription>
-                    Upload a CSV to refresh your cash flow and KPIs.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <CsvUpload onLoaded={setTxs} />
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs">
-                      <div className="text-muted-foreground">Transactions</div>
-                      <div className="text-base font-semibold" data-testid="dashboard-upload-transactions">
-                        {totals.count}
-                      </div>
-                    </div>
-                    <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs">
-                      <div className="text-muted-foreground">Net cash</div>
-                      <div className="text-base font-semibold">{formatMoney(totals.net)}</div>
-                    </div>
-                    <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs">
-                      <div className="text-muted-foreground">Cash in</div>
-                      <div className="text-base font-semibold">{formatMoney(totals.revenue)}</div>
-                    </div>
-                    <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs">
-                      <div className="text-muted-foreground">Cash out</div>
-                      <div className="text-base font-semibold">{formatMoney(totals.expense)}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </section>
-
-            <section className="grid gap-6 lg:grid-cols-[2fr_1fr] elite-rise" style={{ animationDelay: '0.1s' }}>
-              <RevenueChart data={chartData} />
-              <div className="space-y-6">
-                <AIAssistantCard />
-                <NotificationsPanel notifications={mockNotifications} />
-                <DatasetStatus datasets={mockDatasets} />
-                <SuggestionsPanel suggestions={mockSuggestions} />
-              </div>
-            </section>
-
-            <section className="space-y-4 elite-rise" style={{ animationDelay: '0.15s' }}>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h3 className="text-xl font-semibold tracking-tight">Profitability KPIs</h3>
-                  <p className="text-sm text-muted-foreground">
-                    KPIs update from your upload or show sample context.
-                  </p>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Updated {txs.length > 0 ? 'from your latest upload' : 'with sample data'}
-                </div>
-              </div>
-              <KPICards data={kpiData} timeFilter="week" />
-            </section>
-
-            <section className="grid gap-6 lg:grid-cols-3 elite-rise" style={{ animationDelay: '0.2s' }}>
-              <div className="space-y-6 lg:col-span-3">
-                <Card className="border-border/60 bg-card shadow-sm elite-card">
-                  <CardHeader className="pb-3">
-                    <CardTitle>Preview</CardTitle>
-                    <CardDescription>Cleaned sample of your latest rows.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <CsvPreview txs={txs} />
-                  </CardContent>
-                </Card>
-
-                <Card className="border-border/60 bg-card shadow-sm elite-card">
-                  <CardHeader className="pb-3">
-                    <CardTitle>Transactions</CardTitle>
-                    <CardDescription>Full table view of your imported data.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <CsvDataTable txs={txs} />
-                  </CardContent>
-                </Card>
-              </div>
-            </section>
-          </main>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
-  )
+function formatCellValue(value: unknown): string {
+  if (value == null) return ''
+  if (typeof value === 'boolean') return value ? 'true' : 'false'
+  return String(value)
 }
