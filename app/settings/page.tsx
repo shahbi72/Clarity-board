@@ -1,7 +1,5 @@
 'use client'
 
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
-import { AppSidebar } from '@/components/dashboard/app-sidebar'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -19,14 +17,12 @@ import {
 
 export default function SettingsPage() {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <DashboardHeader
-          title="Settings"
-          description="Manage your account and preferences"
-        />
-        <main className="flex-1 space-y-6 p-4 md:p-6">
+    <div className="min-h-full">
+      <DashboardHeader
+        title="Settings"
+        description="Manage your account and preferences"
+      />
+      <main className="flex-1 space-y-6 p-4 md:p-6">
           {/* Profile Settings */}
           <Card>
             <CardHeader>
@@ -139,8 +135,7 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+      </main>
+    </div>
   )
 }

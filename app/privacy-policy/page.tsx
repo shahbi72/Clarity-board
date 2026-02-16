@@ -1,20 +1,16 @@
 'use client'
 
-import { AppSidebar } from '@/components/dashboard/app-sidebar'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
 export default function PrivacyPolicyPage() {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <DashboardHeader
-          title="Privacy Policy"
-          description="How Clarityboard collects and protects your data."
-        />
-        <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-10">
+    <div className="min-h-full">
+      <DashboardHeader
+        title="Privacy Policy"
+        description="How Clarityboard collects and protects your data."
+      />
+      <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-10">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Legal
@@ -98,8 +94,7 @@ export default function PrivacyPolicyPage() {
               </p>
             </CardContent>
           </Card>
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+      </main>
+    </div>
   )
 }

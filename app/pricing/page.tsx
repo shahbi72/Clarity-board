@@ -1,8 +1,6 @@
 'use client'
 
 import { Check, X, Sparkles, Zap, Building2 } from 'lucide-react'
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
-import { AppSidebar } from '@/components/dashboard/app-sidebar'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -84,14 +82,12 @@ export default function PricingPage() {
   const [isYearly, setIsYearly] = useState(false)
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <DashboardHeader
-          title="Pricing"
-          description="Choose the plan that fits your needs"
-        />
-        <main className="flex-1 p-4 md:p-6">
+    <div className="min-h-full">
+      <DashboardHeader
+        title="Pricing"
+        description="Choose the plan that fits your needs"
+      />
+      <main className="flex-1 p-4 md:p-6">
           {/* Header */}
           <div className="mx-auto mb-8 max-w-2xl text-center">
             <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground">
@@ -239,8 +235,7 @@ export default function PricingPage() {
               Contact Sales
             </Button>
           </div>
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+      </main>
+    </div>
   )
 }

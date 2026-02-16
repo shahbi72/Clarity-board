@@ -1,7 +1,5 @@
 'use client'
 
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
-import { AppSidebar } from '@/components/dashboard/app-sidebar'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { AIChat } from '@/components/assistant/ai-chat'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -39,14 +37,12 @@ const capabilities = [
 
 export default function AssistantPage() {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <DashboardHeader
-          title="AI Assistant"
-          description="Get intelligent insights about your business data"
-        />
-        <main className="flex-1 p-4 md:p-6">
+    <div className="min-h-full">
+      <DashboardHeader
+        title="AI Assistant"
+        description="Get intelligent insights about your business data"
+      />
+      <main className="flex-1 p-4 md:p-6">
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Chat Panel */}
             <div className="lg:col-span-2">
@@ -112,8 +108,7 @@ export default function AssistantPage() {
               </Card>
             </div>
           </div>
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+      </main>
+    </div>
   )
 }

@@ -4,7 +4,6 @@ import { Bell, Search, Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { SidebarTrigger } from '@/components/ui/sidebar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,9 +21,8 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
   const { setTheme, theme } = useTheme()
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-6">
+    <header className="flex min-h-16 items-center justify-between border-b border-border/70 bg-white/80 px-4 py-3 backdrop-blur md:px-6">
       <div className="flex items-center gap-4">
-        <SidebarTrigger className="md:hidden" />
         <div>
           <h1 className="text-lg font-semibold text-foreground">{title}</h1>
           {description && (
