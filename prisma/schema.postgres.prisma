@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id
+  email           String?   @unique
+  name            String?
+  activeDatasetId String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  datasets        Dataset[] @relation("UserDatasets")
+  activeDataset   Dataset?  @relation("ActiveDataset", fields: [activeDatasetId], references: [id], onDelete: SetNull)
+
+  @@index([activeDatasetId])
+}
+
+model Dataset {
+  id             String       @id @default(cuid())
+  userId         String
+  name           String
+  fileType       String
+  sizeBytes      Int
+  rowCount       Int
+  columns        Json
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  user           User         @relation("UserDatasets", fields: [userId], references: [id], onDelete: Cascade)
+  rows           DatasetRow[]
+  activeForUsers User[]       @relation("ActiveDataset")
+
+  @@index([userId, updatedAt])
+}
+
+model DatasetRow {
+  id        String   @id @default(cuid())
+  datasetId String
+  rowIndex  Int
+  data      Json
+  createdAt DateTime @default(now())
+  dataset   Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@unique([datasetId, rowIndex])
+  @@index([datasetId, rowIndex])
+}

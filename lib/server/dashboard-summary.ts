@@ -27,12 +27,11 @@ const COLUMN_ALIASES = {
 }
 
 export async function getDashboardSummaryForUser(
-  userId: string,
-  datasetId?: string
+  userId: string
 ): Promise<DashboardSummaryResponse> {
   await ensureCurrentUser(userId)
 
-  const dataset = await resolveDatasetForSummary(userId, datasetId)
+  const dataset = await resolveActiveDatasetForSummary(userId)
   if (!dataset) {
     return createEmptySummary()
   }
@@ -262,13 +261,7 @@ function createEmptySummary(): DashboardSummaryResponse {
   }
 }
 
-async function resolveDatasetForSummary(userId: string, datasetId?: string) {
-  if (datasetId) {
-    return prisma.dataset.findFirst({
-      where: { id: datasetId, userId },
-    })
-  }
-
+async function resolveActiveDatasetForSummary(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { activeDatasetId: true },

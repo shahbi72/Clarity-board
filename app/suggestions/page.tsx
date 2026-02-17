@@ -29,16 +29,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type {
-  ActiveDatasetMetadata,
-  ActiveDatasetResponse,
-  SuggestionsResponse,
+  SuggestionsApiResponse,
+  SuggestionsPayload,
 } from '@/lib/types/data-pipeline'
 
 const CHART_COLOR = '#2563eb'
 
 export default function SuggestionsPage() {
-  const [activeDataset, setActiveDataset] = React.useState<ActiveDatasetMetadata | null>(null)
-  const [suggestions, setSuggestions] = React.useState<SuggestionsResponse | null>(null)
+  const [datasetMeta, setDatasetMeta] = React.useState<SuggestionsApiResponse['datasetMeta']>(null)
+  const [suggestions, setSuggestions] = React.useState<SuggestionsPayload | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -47,33 +46,18 @@ export default function SuggestionsPage() {
     setError(null)
 
     try {
-      const activeResponse = await fetch('/api/active-dataset', { cache: 'no-store' })
-      const activePayload = (await activeResponse.json()) as ActiveDatasetResponse | { error?: string }
-      if (!activeResponse.ok || !('dataset' in activePayload)) {
+      const response = await fetch('/api/suggestions', { cache: 'no-store' })
+      const payload = (await response.json()) as SuggestionsApiResponse | { error?: string }
+      if (!response.ok || !('datasetMeta' in payload)) {
         throw new Error(
-          activePayload && typeof activePayload === 'object' && 'error' in activePayload
-            ? activePayload.error || 'Failed to load active dataset.'
-            : 'Failed to load active dataset.'
-        )
-      }
-
-      setActiveDataset(activePayload.dataset)
-      if (!activePayload.dataset) {
-        setSuggestions(null)
-        return
-      }
-
-      const suggestionsResponse = await fetch('/api/suggestions', { cache: 'no-store' })
-      const suggestionsPayload = (await suggestionsResponse.json()) as SuggestionsResponse | { error?: string }
-      if (!suggestionsResponse.ok || !('summary' in suggestionsPayload)) {
-        throw new Error(
-          suggestionsPayload && typeof suggestionsPayload === 'object' && 'error' in suggestionsPayload
-            ? suggestionsPayload.error || 'Failed to load smart suggestions.'
+          payload && typeof payload === 'object' && 'error' in payload
+            ? payload.error || 'Failed to load smart suggestions.'
             : 'Failed to load smart suggestions.'
         )
       }
 
-      setSuggestions(suggestionsPayload)
+      setDatasetMeta(payload.datasetMeta)
+      setSuggestions(payload.suggestionsPayload)
     } catch (loadError) {
       const message =
         loadError instanceof Error ? loadError.message : 'Failed to load smart suggestions.'
@@ -114,7 +98,7 @@ export default function SuggestionsPage() {
               </Button>
             </CardContent>
           </Card>
-        ) : !activeDataset ? (
+        ) : !datasetMeta ? (
           <Card className="border-dashed border-border/80 bg-white">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -122,18 +106,15 @@ export default function SuggestionsPage() {
                 No Active Dataset
               </CardTitle>
               <CardDescription>
-                Smart Suggestions runs on your active dataset. Upload one and activate it to start.
+                Smart Suggestions runs only on your active dataset.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
               <Button asChild>
-                <Link href="/upload">
-                  Upload Data
+                <Link href="/datasets">
+                  Go to Datasets
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/datasets">Manage Datasets</Link>
               </Button>
             </CardContent>
           </Card>
@@ -157,7 +138,7 @@ export default function SuggestionsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">
-                    Active dataset: {activeDataset.name}
+                    Active dataset: {datasetMeta.name}
                   </Badge>
                   <Button variant="outline" size="sm" onClick={() => void loadSuggestions()}>
                     <RefreshCw className="mr-2 h-3.5 w-3.5" />
@@ -175,7 +156,7 @@ export default function SuggestionsPage() {
                     Executive Summary
                   </CardTitle>
                   <CardDescription>
-                    Key findings from dataset {activeDataset.name}.
+                    Key findings from dataset {datasetMeta.name}.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -294,7 +275,7 @@ export default function SuggestionsPage() {
               </Card>
             </section>
 
-            <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <section>
               <Card className="border-border/70 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base">
@@ -313,26 +294,6 @@ export default function SuggestionsPage() {
                   </ul>
                 </CardContent>
               </Card>
-
-              <Card className="border-border/70 bg-white shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-base">Detected Signals</CardTitle>
-                  <CardDescription>Column mapping used to generate insights.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm">
-                  <SignalRow label="Date column" value={suggestions.mappings.dateColumn} />
-                  <SignalRow label="Metric column" value={suggestions.mappings.primaryMetricColumn} />
-                  <SignalRow label="Category column" value={suggestions.mappings.categoryColumn} />
-                  <SignalRow
-                    label="Numeric columns"
-                    value={
-                      suggestions.mappings.numericColumns.length > 0
-                        ? suggestions.mappings.numericColumns.join(', ')
-                        : null
-                    }
-                  />
-                </CardContent>
-              </Card>
             </section>
           </>
         )}
@@ -346,15 +307,6 @@ function QualityStat({ label, value }: { label: string; value: number }) {
     <div className="rounded-lg border border-border/60 bg-slate-50 p-3">
       <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
       <div className="mt-1 text-xl font-semibold text-foreground">{value.toLocaleString()}</div>
-    </div>
-  )
-}
-
-function SignalRow({ label, value }: { label: string; value: string | null }) {
-  return (
-    <div className="rounded-lg border border-border/60 bg-slate-50 px-3 py-2">
-      <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
-      <div className="mt-1 font-medium text-foreground">{value || 'Not detected'}</div>
     </div>
   )
 }

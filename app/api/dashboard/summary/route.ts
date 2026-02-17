@@ -4,12 +4,10 @@ import { getDashboardSummaryForUser } from '@/lib/server/dashboard-summary'
 import { getErrorMessage } from '@/lib/server/http-error'
 import type { DashboardSummaryResponse } from '@/lib/types/data-pipeline'
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const userId = await getCurrentUserId()
-    const { searchParams } = new URL(request.url)
-    const datasetId = searchParams.get('datasetId') ?? undefined
-    const summary = await getDashboardSummaryForUser(userId, datasetId)
+    const summary = await getDashboardSummaryForUser(userId)
     const response: DashboardSummaryResponse = summary
     return NextResponse.json(response)
   } catch (error) {

@@ -46,13 +46,12 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
 
-  const loadSummary = React.useCallback(async (datasetId?: string) => {
+  const loadSummary = React.useCallback(async () => {
     setIsLoading(true)
     setError(null)
 
     try {
-      const query = datasetId ? `?datasetId=${encodeURIComponent(datasetId)}` : ''
-      const response = await fetch(`/api/dashboard/summary${query}`, { cache: 'no-store' })
+      const response = await fetch('/api/dashboard/summary', { cache: 'no-store' })
       const payload = (await response.json()) as DashboardSummaryResponse | { error?: string }
       if (!response.ok) {
         throw new Error(
@@ -80,7 +79,7 @@ export default function DashboardPage() {
       title: 'Dataset uploaded',
       description: `${payload.datasetName} is now active on your dashboard.`,
     })
-    void loadSummary(payload.datasetId)
+    void loadSummary()
   }
 
   const previewColumns = React.useMemo(() => {
@@ -133,7 +132,7 @@ export default function DashboardPage() {
               No Active Dataset
             </CardTitle>
             <CardDescription>
-              Upload and activate a dataset to unlock dashboard metrics and charts.
+              Select an active dataset from Datasets, or upload one to automatically activate it.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-3">

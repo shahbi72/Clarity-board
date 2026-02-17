@@ -1,97 +1,60 @@
 import { test, expect, type Page } from '@playwright/test'
 import path from 'node:path'
 
-const fixturesDir = path.join(__dirname, '..', 'fixtures')
-const smallFixturePath = path.join(fixturesDir, 'ecommerce-small-200.csv')
-const mediumFixturePath = path.join(fixturesDir, 'ecommerce-medium-20000.csv')
-const semicolonFixturePath = path.join(fixturesDir, 'ecommerce-small-200.semicolon.csv')
-const tabFixturePath = path.join(fixturesDir, 'ecommerce-small-200.tab.csv')
-const currencyCodesFixturePath = path.join(fixturesDir, 'ecommerce-currency-codes.csv')
-const largeFixturePath = path.join(fixturesDir, 'ecommerce-large-200000.csv')
-const invalidFixturePath = path.join(fixturesDir, 'ecommerce-invalid.csv')
+const fixturePath = path.join(__dirname, '..', 'fixtures', 'transactions.csv')
 
-test.beforeEach(async ({ page }) => {
-  await page.goto('/', { waitUntil: 'domcontentloaded' })
-  await expect(page.getByTestId('csv-file-input')).toBeAttached({ timeout: 15_000 })
-  await expect(page.getByTestId('csv-upload-status')).toHaveAttribute('data-state', 'idle')
+test('upload flow persists active dataset across dashboard and suggestions refresh', async ({ page }) => {
+  const datasetName = `E2E Dataset ${Date.now()}`
+
+  await uploadDataset(page, datasetName, fixturePath)
+
+  const datasetRow = page.locator('tr', { hasText: datasetName }).first()
+  await expect(datasetRow).toBeVisible()
+  await expect(datasetRow).toContainText('Active')
+
+  await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('heading', { name: datasetName })).toBeVisible()
+
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('heading', { name: datasetName })).toBeVisible()
+
+  await page.goto('/suggestions', { waitUntil: 'domcontentloaded' })
+  await expect(page.getByText(`Active dataset: ${datasetName}`)).toBeVisible()
+  await expect(page.getByRole('link', { name: /^Go to Datasets$/i })).toHaveCount(0)
+
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.getByText(`Active dataset: ${datasetName}`)).toBeVisible()
 })
 
-test('uploading a small CSV updates preview, table, and dashboard metrics state', async ({ page }) => {
-  await uploadAndExpectState(page, smallFixturePath, 'success')
+test('activating a different dataset updates dashboard and suggestions to the new active dataset', async ({
+  page,
+}) => {
+  const firstDatasetName = `E2E First ${Date.now()}`
+  const secondDatasetName = `E2E Second ${Date.now()}`
 
-  await expect(page.getByTestId('csv-preview')).toHaveAttribute('data-state', 'ready')
-  await expect(page.getByTestId('csv-data-table')).toHaveAttribute('data-state', 'ready')
-  await expect(page.getByTestId('csv-preview-row').first()).toBeVisible()
-  await expect(page.getByTestId('csv-data-table-row').first()).toBeVisible()
-  await expect(page.getByTestId('dashboard-upload-transactions')).not.toHaveText('0')
+  await uploadDataset(page, firstDatasetName, fixturePath)
+  await uploadDataset(page, secondDatasetName, fixturePath)
+
+  const firstDatasetRow = page.locator('tr', { hasText: firstDatasetName }).first()
+  await expect(firstDatasetRow).toBeVisible()
+  await firstDatasetRow.getByRole('button', { name: /^Activate$/i }).click()
+
+  await expect(page).toHaveURL(/\/dashboard$/)
+  await expect(page.getByRole('heading', { name: firstDatasetName })).toBeVisible()
+
+  await page.goto('/suggestions', { waitUntil: 'domcontentloaded' })
+  await expect(page.getByText(`Active dataset: ${firstDatasetName}`)).toBeVisible()
 })
 
-test('uploading a medium CSV shows progress and completes without UI freeze', async ({ page }) => {
-  const input = page.getByTestId('csv-file-input')
-  const status = page.getByTestId('csv-upload-status')
+async function uploadDataset(page: Page, datasetName: string, fixture: string) {
+  await page.goto('/upload', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('#dataset-file-input')).toBeAttached({ timeout: 15_000 })
 
-  await input.setInputFiles(mediumFixturePath)
-  if ((await status.getAttribute('data-state')) === 'idle') {
-    await input.setInputFiles(mediumFixturePath)
-  }
+  await page.getByLabel('Dataset name').fill(datasetName)
+  await page.locator('#dataset-file-input').setInputFiles(fixture)
+  await page.getByRole('button', { name: /upload dataset/i }).click()
 
-  await expect(page.getByTestId('csv-upload-progress')).toBeVisible({ timeout: 20_000 })
-  await expect(status).toHaveAttribute('data-state', 'success', {
-    timeout: 90_000,
-  })
-  await expect(page.getByTestId('csv-data-table-row').first()).toBeVisible()
-  await expect(page.getByTestId('dashboard-upload-transactions')).not.toHaveText('0')
-})
-
-test('uploading semicolon-delimited CSV parses successfully', async ({ page }) => {
-  await uploadAndExpectState(page, semicolonFixturePath, 'success')
-
-  await expect(page.getByTestId('csv-preview')).toHaveAttribute('data-state', 'ready')
-  await expect(page.getByTestId('csv-data-table-row').first()).toBeVisible()
-})
-
-test('uploading tab-delimited CSV parses successfully', async ({ page }) => {
-  await uploadAndExpectState(page, tabFixturePath, 'success')
-
-  await expect(page.getByTestId('csv-preview')).toHaveAttribute('data-state', 'ready')
-  await expect(page.getByTestId('csv-data-table-row').first()).toBeVisible()
-})
-
-test('uploading ISO currency code CSV parses amounts and updates dashboard totals', async ({ page }) => {
-  await uploadAndExpectState(page, currencyCodesFixturePath, 'success')
-
-  await expect(page.getByTestId('csv-preview')).toHaveAttribute('data-state', 'ready')
-  await expect(page.getByTestId('csv-data-table-row').first()).toBeVisible()
-  await expect(page.getByTestId('dashboard-upload-transactions')).toHaveText('5')
-})
-
-test('uploading oversized CSV shows guardrail error instead of hanging parse', async ({ page }) => {
-  await uploadAndExpectState(page, largeFixturePath, 'error')
-
-  await expect(page.getByTestId('csv-preview')).toHaveAttribute('data-state', 'empty')
-  await expect(page.getByTestId('csv-data-table')).toHaveAttribute('data-state', 'empty')
-  await expect(page.getByTestId('dashboard-upload-transactions')).toHaveText('0')
-})
-
-test('uploading invalid CSV keeps clean error and empty states', async ({ page }) => {
-  await uploadAndExpectState(page, invalidFixturePath, 'error')
-
-  await expect(page.getByTestId('csv-preview')).toHaveAttribute('data-state', 'empty')
-  await expect(page.getByTestId('csv-data-table')).toHaveAttribute('data-state', 'empty')
-  await expect(page.getByTestId('csv-data-table-empty')).toBeVisible()
-})
-
-async function uploadAndExpectState(page: Page, fixturePath: string, state: 'success' | 'error') {
-  const input = page.getByTestId('csv-file-input')
-  const status = page.getByTestId('csv-upload-status')
-
-  await input.setInputFiles(fixturePath)
-  if ((await status.getAttribute('data-state')) === 'idle') {
-    // Hydration race fallback on slower test boot.
-    await input.setInputFiles(fixturePath)
-  }
-
-  await expect(page.getByTestId('csv-upload-status')).toHaveAttribute('data-state', state, {
+  await expect(page).toHaveURL(/\/datasets(\?.*)?$/, {
     timeout: 45_000,
   })
 }

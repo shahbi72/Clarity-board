@@ -1,4 +1,9 @@
-import type { Tx } from '@/lib/csv'
+export type Tx = {
+  amount: number
+  type: 'revenue' | 'expense'
+  productName?: string
+  date?: string
+}
 
 export type DailyMetrics = {
   revenue: number

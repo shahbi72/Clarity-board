@@ -33,9 +33,9 @@ export function DatasetUploader({
     setStatus('')
     setStatusTone('idle')
     if (!nextFile) return
-    if (!datasetName.trim()) {
-      setDatasetName(stripFileExtension(nextFile.name))
-    }
+    setDatasetName((current) =>
+      current.trim() ? current : stripFileExtension(nextFile.name)
+    )
   }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

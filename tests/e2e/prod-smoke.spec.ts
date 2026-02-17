@@ -9,8 +9,8 @@ function resolvePath(pathname: string): string {
 test('home page exposes upload UI essentials', async ({ page }) => {
   await page.goto(resolvePath('/'), { waitUntil: 'domcontentloaded' })
 
-  await expect(page.getByTestId('csv-file-input')).toBeAttached({ timeout: 20_000 })
-  await expect(page.getByText('Starter: max 25MB.')).toBeVisible()
+  await expect(page.locator('#dataset-file-input').first()).toBeAttached({ timeout: 20_000 })
+  await expect(page.getByText('Max file size 25MB.')).toBeVisible()
 })
 
 test('/upload returns upload UI when route exists', async ({ page, request }) => {
@@ -22,6 +22,6 @@ test('/upload returns upload UI when route exists', async ({ page, request }) =>
   expect(response.status()).toBe(200)
 
   await page.goto(uploadUrl, { waitUntil: 'domcontentloaded' })
-  await expect(page.getByTestId('csv-file-input')).toBeAttached({ timeout: 20_000 })
-  await expect(page.getByText('Starter: max 25MB.')).toBeVisible()
+  await expect(page.locator('#dataset-file-input')).toBeAttached({ timeout: 20_000 })
+  await expect(page.getByText('Max file size 25MB.')).toBeVisible()
 })

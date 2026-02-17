@@ -161,3 +161,10 @@ export interface SuggestionsResponse {
   topCategories: SuggestionsCategoryPoint[]
   recommendations: string[]
 }
+
+export type SuggestionsPayload = Omit<SuggestionsResponse, 'dataset'>
+
+export interface SuggestionsApiResponse {
+  datasetMeta: ActiveDatasetMetadata | null
+  suggestionsPayload: SuggestionsPayload | null
+}
