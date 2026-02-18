@@ -30,13 +30,13 @@ pnpm prisma:push:postgres       # apply schema to Postgres
 
 Set these in Vercel Project Settings -> Environment Variables:
 
-- `DATABASE_URL` = your Postgres connection string
+- `DATABASE_URL` = `file:./dev.db`
 - `DEMO_USER_ID` = stable app user id (for demo mode)
 
-Recommended providers:
+SQLite note:
 
-- Vercel Postgres
-- Supabase Postgres
+- The SQLite Prisma schema requires `DATABASE_URL` to start with `file:`.
+- If `DATABASE_URL` is missing or invalid, the app now falls back to `file:./dev.db` to avoid a hard crash.
 
 ## Migrating Off SQLite On Vercel
 
