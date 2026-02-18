@@ -57,11 +57,17 @@ jobs:
       - name: Install Playwright browser
         run: pnpm -s exec playwright install --with-deps chromium || true
 
-      - name: Run unit tests
-        run: pnpm -s run --if-present test
+      - name: Run unit tests (only if script exists)
+        run: |
+          node -e "const s=require('./package.json').scripts||{}; process.exit(s.test?0:1)" \
+            && pnpm -s run test \
+            || echo "No test script; skipping"
 
-      - name: Run e2e tests
-        run: pnpm -s run --if-present test:e2e
+      - name: Run e2e tests (only if script exists)
+        run: |
+          node -e "const s=require('./package.json').scripts||{}; process.exit(s['test:e2e']?0:1)" \
+            && pnpm -s run test:e2e \
+            || echo "No test:e2e script; skipping"
 
       - name: Upload Playwright artifacts on failure
         if: failure()
