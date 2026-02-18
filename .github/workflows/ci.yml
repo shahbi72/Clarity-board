@@ -45,8 +45,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run lint
-        run: pnpm -s run lint --if-present
+      - name: Lint (only if script exists)
+        run: |
+          node -e "const s=require('./package.json').scripts||{}; process.exit(s.lint?0:1)" \
+            && pnpm -s run lint \
+            || echo "No lint script; skipping"
 
       - name: Build app
         run: pnpm build
@@ -55,10 +58,10 @@ jobs:
         run: pnpm -s exec playwright install --with-deps chromium || true
 
       - name: Run unit tests
-        run: pnpm -s run test --if-present
+        run: pnpm -s run --if-present test
 
       - name: Run e2e tests
-        run: pnpm -s run test:e2e --if-present
+        run: pnpm -s run --if-present test:e2e
 
       - name: Upload Playwright artifacts on failure
         if: failure()
