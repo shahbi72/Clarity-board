@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -15,7 +15,7 @@ model User {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   datasets        Dataset[] @relation("UserDatasets")
-  activeDataset   Dataset?  @relation("ActiveDataset", fields: [activeDatasetId], references: [id], onDelete: SetNull)
+  activeDataset   Dataset?  @relation("ActiveDataset", fields: [activeDatasetId], references: [id])
 
   @@index([activeDatasetId])
 }

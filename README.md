@@ -5,47 +5,23 @@
 Create `.env.local` in project root:
 
 ```bash
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://postgres.<ref>:<password>@aws-1-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require"
 DEMO_USER_ID="demo-user"
 ```
 
-`DATABASE_URL="file:./dev.db"` keeps local development on SQLite (`prisma/dev.db`).
+Use your Supabase pooler connection string (`:6543` with `sslmode=require`).
+Do not use `db.<ref>.supabase.co:5432` if network access is blocked; use the pooler host.
 
-## Prisma Schema Selection
+## Prisma
 
-Prisma client generation is automatic from `DATABASE_URL`:
+`prisma/schema.prisma` is configured for PostgreSQL.
+Run migrations against your Supabase database:
 
-- SQLite URL -> `prisma/schema.prisma`
-- Postgres URL -> `prisma/schema.postgres.prisma`
-
-Scripts:
-
-```bash
-pnpm prisma:generate            # force SQLite client
-pnpm prisma:generate:postgres   # force Postgres client
-pnpm prisma:push:postgres       # apply schema to Postgres
-```
+`pnpm prisma migrate dev --name init`
 
 ## Vercel Production Variables
 
 Set these in Vercel Project Settings -> Environment Variables:
 
-- `DATABASE_URL` = `file:./dev.db`
+- `DATABASE_URL` = Supabase Postgres pooler URL (`:6543`, `sslmode=require`)
 - `DEMO_USER_ID` = stable app user id (for demo mode)
-
-SQLite note:
-
-- The SQLite Prisma schema requires `DATABASE_URL` to start with `file:`.
-- If `DATABASE_URL` is missing or invalid, the app now falls back to `file:./dev.db` to avoid a hard crash.
-
-## Migrating Off SQLite On Vercel
-
-If deployment currently points to SQLite-like/local storage:
-
-1. Provision a managed Postgres database.
-2. Set `DATABASE_URL` in Vercel to the Postgres URL.
-3. Apply schema once:
-   `pnpm prisma:push:postgres`
-4. Redeploy.
-5. Validate flows:
-   upload -> datasets activation -> dashboard refresh -> suggestions refresh.
