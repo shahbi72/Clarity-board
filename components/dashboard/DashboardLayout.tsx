@@ -4,6 +4,7 @@ import React from 'react'
 import { PanelLeft } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 
+import { HeaderAuthMenu } from '@/components/auth/HeaderAuthMenu'
 import { Sidebar } from '@/components/dashboard/Sidebar'
 import { cn } from '@/lib/utils'
 
@@ -18,8 +19,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = React.useState(false)
   const [isDesktop, setIsDesktop] = React.useState(false)
+  const isAuthRoute = pathname.startsWith('/auth/')
 
   React.useEffect(() => {
+    if (isAuthRoute) return
+
     const mediaQuery = window.matchMedia(DESKTOP_QUERY)
     setIsDesktop(mediaQuery.matches)
 
@@ -29,7 +33,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
     mediaQuery.addEventListener('change', handleMediaChange)
     return () => mediaQuery.removeEventListener('change', handleMediaChange)
-  }, [])
+  }, [isAuthRoute])
 
   React.useEffect(() => {
     setMobileOpen(false)
@@ -48,13 +52,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [mobileOpen, isDesktop])
 
+  if (isAuthRoute) {
+    return <div className="min-h-screen bg-slate-100">{children}</div>
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="flex min-h-screen">
         <Sidebar className="fixed inset-y-0 left-0 z-40 hidden w-72 lg:flex" datasetsCount={DATASET_COUNT} />
 
         <div className="flex min-h-screen flex-1 flex-col lg:pl-72">
-          <header className="sticky top-0 z-30 flex h-14 items-center border-b border-slate-200 bg-slate-50/95 px-4 backdrop-blur lg:hidden">
+          <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-slate-200 bg-slate-50/95 px-4 backdrop-blur lg:hidden">
             <button
               type="button"
               aria-label="Open navigation drawer"
@@ -63,6 +71,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             >
               <PanelLeft className="size-4" />
             </button>
+            <HeaderAuthMenu />
           </header>
 
           <main className="flex-1">{children}</main>

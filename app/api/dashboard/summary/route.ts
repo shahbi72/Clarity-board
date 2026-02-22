@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getCurrentUserId } from '@/lib/server/auth'
 import { getDashboardSummaryForUser } from '@/lib/server/dashboard-summary'
-import { getErrorMessage } from '@/lib/server/http-error'
+import { getErrorMessage, HttpError } from '@/lib/server/http-error'
 import type { DashboardSummaryResponse } from '@/lib/types/data-pipeline'
 
 export async function GET() {
@@ -11,9 +11,10 @@ export async function GET() {
     const response: DashboardSummaryResponse = summary
     return NextResponse.json(response)
   } catch (error) {
+    const status = error instanceof HttpError ? error.status : 500
     return NextResponse.json(
       { error: getErrorMessage(error) },
-      { status: 500 }
+      { status }
     )
   }
 }

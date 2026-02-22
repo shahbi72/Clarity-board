@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getCurrentUserId } from '@/lib/server/auth'
-import { getErrorMessage } from '@/lib/server/http-error'
+import { getErrorMessage, HttpError } from '@/lib/server/http-error'
 import { getSuggestionsForUser } from '@/lib/server/suggestions'
 import type { SuggestionsApiResponse, SuggestionsPayload } from '@/lib/types/data-pipeline'
 
@@ -25,6 +25,7 @@ export async function GET() {
 
     return NextResponse.json(response)
   } catch (error) {
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
+    const status = error instanceof HttpError ? error.status : 500
+    return NextResponse.json({ error: getErrorMessage(error) }, { status })
   }
 }
