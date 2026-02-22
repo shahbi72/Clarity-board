@@ -20,7 +20,12 @@ export function ChartCard({
   children,
 }: ChartCardProps) {
   return (
-    <section className={cn('rounded-xl border border-slate-200 bg-white p-5 shadow-sm', className)}>
+    <section
+      className={cn(
+        'rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md',
+        className
+      )}
+    >
       <header className="mb-4">
         <h2 className="text-base font-semibold text-slate-900">{title}</h2>
         {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}

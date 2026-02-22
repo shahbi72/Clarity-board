@@ -12,6 +12,7 @@
     "dev": "next dev",
     "fixtures:generate": "node scripts/generate-csv-fixtures.mjs",
     "lint": "eslint .",
+    "preinstall": "node -e \"const v=process.versions.node;if(!/^20\\./.test(v)){console.error('ERROR: Node 20.x required. Current: v'+v);process.exit(1)}\"",
     "postinstall": "pnpm run prisma:generate:auto",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "prisma:generate:auto": "node scripts/prisma-generate.mjs",

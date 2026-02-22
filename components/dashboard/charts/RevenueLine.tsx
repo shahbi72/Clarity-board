@@ -29,18 +29,9 @@ export function RevenueLine({ data }: RevenueLineProps) {
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
         <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-        <XAxis dataKey="period" tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-        <YAxis
-          tickLine={false}
-          axisLine={false}
-          tick={{ fill: '#64748b', fontSize: 12 }}
-          tickFormatter={formatMoney}
-        />
-        <Tooltip
-          formatter={(value: number) => [formatMoney(value), '']}
-          contentStyle={{ borderRadius: 12, borderColor: '#cbd5e1' }}
-          labelStyle={{ color: '#0f172a', fontWeight: 600 }}
-        />
+        <XAxis dataKey="period" tickLine={false} axisLine={false} />
+        <YAxis tickLine={false} axisLine={false} tickFormatter={formatMoney} />
+        <Tooltip formatter={(value: number) => [formatMoney(value), '']} />
         <Legend />
         <Line
           type="monotone"

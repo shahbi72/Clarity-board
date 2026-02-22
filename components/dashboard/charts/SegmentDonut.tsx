@@ -34,11 +34,8 @@ export function SegmentDonut({ data }: SegmentDonutProps) {
             <Cell key={entry.name} fill={entry.color} />
           ))}
         </Pie>
-        <Tooltip
-          formatter={(value: number) => [`${value} (${renderPercentage(value, total)})`, 'Share']}
-          contentStyle={{ borderRadius: 12, borderColor: '#cbd5e1' }}
-        />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <Tooltip formatter={(value: number) => [`${value} (${renderPercentage(value, total)})`, 'Share']} />
+        <Legend />
       </PieChart>
     </ResponsiveContainer>
   )

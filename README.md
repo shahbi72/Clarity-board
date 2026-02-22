@@ -1,5 +1,11 @@
 # ClarityBoard UI Build
 
+## Required Node Version
+
+- Install Node 20 LTS.
+- Use `nvm use 20`.
+- Verify with `node -v`.
+
 ## Environment Setup
 
 Create `.env.local` in project root:

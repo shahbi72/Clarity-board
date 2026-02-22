@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { IBM_Plex_Mono, Work_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
-import { DashboardShell } from '@/components/dashboard/dashboard-shell'
+import { DashboardLayout } from '@/components/dashboard/DashboardLayout'
 import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
@@ -64,7 +64,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <DashboardShell>{children}</DashboardShell>
+          <DashboardLayout>{children}</DashboardLayout>
           <Toaster />
         </ThemeProvider>
         <div

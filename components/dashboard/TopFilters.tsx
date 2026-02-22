@@ -36,7 +36,7 @@ export function TopFilters({
             aria-label="Date range select"
             value={dateRange}
             onChange={(event) => onDateRangeChange(event.target.value as DateRangeOption)}
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none ring-sky-200 transition focus:ring-2"
+            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none transition-all duration-200 focus:border-slate-400"
           >
             <option value="30d">Last 30 days</option>
             <option value="90d">Last 90 days</option>
@@ -50,7 +50,7 @@ export function TopFilters({
             aria-label="Region select"
             value={region}
             onChange={(event) => onRegionChange(event.target.value as RegionOption)}
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none ring-sky-200 transition focus:ring-2"
+            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none transition-all duration-200 focus:border-slate-400"
           >
             <option value="all">All regions</option>
             <option value="na">North America</option>
@@ -67,7 +67,7 @@ export function TopFilters({
             aria-label="Product select"
             value={product}
             onChange={(event) => onProductChange(event.target.value as ProductOption)}
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none ring-sky-200 transition focus:ring-2"
+            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none transition-all duration-200 focus:border-slate-400"
           >
             <option value="all">All products</option>
             <option value="clarity">Clarity Board</option>
@@ -85,7 +85,7 @@ export function TopFilters({
             value={searchTerm}
             onChange={(event) => onSearchTermChange(event.target.value)}
             placeholder="Search campaign, rep, segment..."
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none ring-sky-200 transition focus:ring-2"
+            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none transition-all duration-200 focus:border-slate-400"
           />
         </label>
 
@@ -94,7 +94,7 @@ export function TopFilters({
             type="button"
             aria-label="Export dashboard data"
             onClick={onExport}
-            className="h-10 w-full rounded-lg bg-slate-900 px-4 text-sm font-medium text-white transition hover:bg-slate-700 sm:w-auto"
+            className="h-10 w-full rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-slate-700 sm:w-auto"
           >
             Export
           </button>
