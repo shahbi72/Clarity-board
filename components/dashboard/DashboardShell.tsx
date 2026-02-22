@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { ChartCard } from '@/components/dashboard/ChartCard'
 import { KpiRow, type KpiItem } from '@/components/dashboard/KpiRow'
-import { Sidebar } from '@/components/dashboard/Sidebar'
 import {
   TopFilters,
   type DateRangeOption,
@@ -258,10 +257,8 @@ export default function DashboardShell() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <div className="mx-auto grid max-w-[1600px] grid-cols-1 xl:grid-cols-[260px_minmax(0,1fr)_minmax(0,1fr)]">
-        <Sidebar />
-
-        <main className="space-y-6 p-4 sm:p-6 xl:col-span-2 xl:p-8">
+      <div className="mx-auto max-w-[1600px]">
+        <main className="space-y-6 p-4 sm:p-6 xl:p-8">
           <TopFilters
             dateRange={dateRange}
             onDateRangeChange={handleDateRangeChange}
