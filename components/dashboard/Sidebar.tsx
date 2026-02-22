@@ -96,7 +96,7 @@ export function Sidebar({ className, mobile = false, onNavigate, datasetsCount =
       )}
     >
       <div className="flex items-center gap-3 px-2">
-        <div className="grid size-10 place-items-center rounded-xl bg-slate-900 text-white shadow-sm">
+        <div className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
           <Sparkles className="size-5" />
         </div>
         <div>
@@ -136,7 +136,7 @@ export function Sidebar({ className, mobile = false, onNavigate, datasetsCount =
                     className={cn(
                       'group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all duration-200',
                       isActive
-                        ? 'border-slate-900 bg-slate-900 text-white shadow-sm'
+                        ? 'border-primary bg-primary text-primary-foreground shadow-sm'
                         : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-100 hover:text-slate-900'
                     )}
                   >
@@ -146,7 +146,9 @@ export function Sidebar({ className, mobile = false, onNavigate, datasetsCount =
                       <span
                         className={cn(
                           'ml-auto inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold',
-                          isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                          isActive
+                            ? 'bg-primary-foreground/20 text-primary-foreground'
+                            : 'bg-slate-200 text-slate-700'
                         )}
                       >
                         {item.badge}
@@ -164,7 +166,7 @@ export function Sidebar({ className, mobile = false, onNavigate, datasetsCount =
         <button
           type="button"
           aria-label="Upgrade plan"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-slate-700"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90"
         >
           <Zap className="size-4" />
           <span>Upgrade Plan</span>
