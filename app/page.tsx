@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, BarChart3, Boxes, DollarSign } from 'lucide-react'
+import { LiveBackground } from '@/components/marketing/LiveBackground'
 import { Button } from '@/components/ui/button'
 
 const FEATURES = [
@@ -40,23 +41,40 @@ export default function LandingPage() {
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
-        <section className="mx-auto max-w-3xl text-center">
-          <h1 className="text-balance text-4xl font-semibold tracking-tight md:text-5xl">
-            Clarityboard
-          </h1>
-          <p className="mt-4 text-balance text-lg text-muted-foreground">
-            AI-powered business intelligence for decisions, not dashboards.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Button asChild size="lg">
-              <Link href="/signup">
-                Start free
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link href="/pricing">View pricing</Link>
-            </Button>
+        <section className="relative mx-auto max-w-4xl overflow-hidden rounded-3xl border border-border/70 bg-card/40 px-6 py-16 text-center shadow-sm md:px-10 md:py-20">
+          <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_20%_10%,rgba(28,59,122,0.96),transparent_58%),radial-gradient(circle_at_80%_30%,rgba(80,130,216,0.38),transparent_56%),linear-gradient(135deg,rgba(7,20,44,0.96)_0%,rgba(9,26,58,0.94)_50%,rgba(8,18,36,0.96)_100%)]" />
+          <LiveBackground className="z-[1]" />
+          <div
+            className="pointer-events-none absolute inset-0 z-[2]"
+            style={{
+              background:
+                'radial-gradient(circle at 50% 42%, color-mix(in oklch, var(--background) 88%, white) 0%, color-mix(in oklch, var(--background) 72%, white) 38%, color-mix(in oklch, var(--background) 24%, transparent) 72%, transparent 100%)',
+            }}
+          />
+
+          <div className="relative z-10 mx-auto max-w-3xl">
+            <h1 className="text-balance text-4xl font-semibold tracking-tight text-slate-50 md:text-5xl">
+              Clarityboard
+            </h1>
+            <p className="mt-4 text-balance text-lg text-slate-200">
+              AI-powered business intelligence for decisions, not dashboards.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Button asChild size="lg">
+                <Link href="/signup">
+                  Start free
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="border-slate-200/50 bg-slate-900/20 text-slate-100 hover:bg-slate-900/35"
+              >
+                <Link href="/pricing">View pricing</Link>
+              </Button>
+            </div>
           </div>
         </section>
 
