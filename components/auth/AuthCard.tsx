@@ -4,6 +4,10 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Chrome, Github, Loader2, Sparkles } from 'lucide-react'
+import {
+  createFallbackSessionCookie,
+  hasFallbackSessionFromCookieHeader,
+} from '@/lib/auth/fallback-session'
 import { getSupabaseBrowserClient, isSupabaseBrowserAuthConfigured } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -42,7 +46,12 @@ export function AuthCard({ mode }: AuthCardProps) {
   }, [searchParams])
 
   React.useEffect(() => {
-    if (!supabase) return
+    if (!authConfigured || !supabase) {
+      if (typeof document !== 'undefined' && hasFallbackSessionFromCookieHeader(document.cookie)) {
+        router.replace(nextPath)
+      }
+      return
+    }
 
     const syncSession = async () => {
       const { data, error: userError } = await supabase.auth.getUser()
@@ -64,7 +73,7 @@ export function AuthCard({ mode }: AuthCardProps) {
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase, router, nextPath])
+  }, [authConfigured, supabase, router, nextPath])
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -72,7 +81,12 @@ export function AuthCard({ mode }: AuthCardProps) {
     setInfo(null)
 
     if (!authConfigured || !supabase) {
-      router.push('/dashboard')
+      if (typeof document !== 'undefined') {
+        const secure = window.location.protocol === 'https:'
+        document.cookie = createFallbackSessionCookie({ secure })
+      }
+      router.replace(nextPath)
+      router.refresh()
       return
     }
 
@@ -116,7 +130,7 @@ export function AuthCard({ mode }: AuthCardProps) {
     setInfo(null)
 
     if (!authConfigured || !supabase) {
-      router.push('/dashboard')
+      setError('OAuth sign-in requires Supabase auth configuration.')
       return
     }
 
@@ -155,7 +169,7 @@ export function AuthCard({ mode }: AuthCardProps) {
         <CardContent className="space-y-4">
           {!authConfigured ? (
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-              Supabase auth env vars are missing. Demo mode is active.
+              Supabase auth env vars are missing. Local fallback auth is active for this deployment.
             </div>
           ) : null}
 
@@ -262,12 +276,6 @@ export function AuthCard({ mode }: AuthCardProps) {
             </Link>
             .
           </p>
-
-          {!authConfigured ? (
-            <Button asChild className="w-full" variant="secondary">
-              <Link href="/dashboard">Continue in Demo Mode</Link>
-            </Button>
-          ) : null}
         </CardContent>
       </Card>
     </div>

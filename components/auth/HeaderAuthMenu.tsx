@@ -5,6 +5,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { CreditCard, Languages, Loader2, LogOut, UserCircle2 } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
+import {
+  clearFallbackSessionCookie,
+  hasFallbackSessionFromCookieHeader,
+} from '@/lib/auth/fallback-session'
 import { getSupabaseBrowserClient, isSupabaseBrowserAuthConfigured } from '@/lib/supabase/client'
 import { useI18n, useLanguagePreference } from '@/components/language/language-provider'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -47,12 +51,16 @@ export function HeaderAuthMenu() {
   const { language, setLanguage } = useLanguagePreference()
 
   const [user, setUser] = React.useState<User | null>(null)
+  const [hasFallbackSession, setHasFallbackSession] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(authConfigured)
   const [isSigningOut, setIsSigningOut] = React.useState(false)
 
   React.useEffect(() => {
-    if (!supabase) {
+    if (!authConfigured || !supabase) {
       setIsLoading(false)
+      if (typeof document !== 'undefined') {
+        setHasFallbackSession(hasFallbackSessionFromCookieHeader(document.cookie))
+      }
       return
     }
 
@@ -73,11 +81,19 @@ export function HeaderAuthMenu() {
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase])
+  }, [authConfigured, supabase])
 
   const handleSignOut = async () => {
-    if (!supabase) {
+    if (!authConfigured || !supabase) {
+      setIsSigningOut(true)
+      if (typeof document !== 'undefined') {
+        const secure = window.location.protocol === 'https:'
+        document.cookie = clearFallbackSessionCookie({ secure })
+      }
+      setHasFallbackSession(false)
       router.push('/login')
+      router.refresh()
+      setIsSigningOut(false)
       return
     }
 
@@ -95,14 +111,6 @@ export function HeaderAuthMenu() {
     }
   }
 
-  if (!authConfigured) {
-    return (
-      <Button asChild variant="outline" size="sm">
-        <Link href="/dashboard">{tAuth('demoMode')}</Link>
-      </Button>
-    )
-  }
-
   if (isLoading) {
     return (
       <Button variant="ghost" size="icon" disabled>
@@ -112,7 +120,9 @@ export function HeaderAuthMenu() {
     )
   }
 
-  if (!user) {
+  const isAuthenticated = authConfigured ? Boolean(user) : hasFallbackSession
+
+  if (!isAuthenticated) {
     return (
       <Button asChild size="sm">
         <Link href="/login">{tAuth('signIn')}</Link>
@@ -120,8 +130,8 @@ export function HeaderAuthMenu() {
     )
   }
 
-  const displayName = getDisplayName(user)
-  const email = user.email ?? ''
+  const displayName = user ? getDisplayName(user) : 'Clarityboard User'
+  const email = user?.email ?? ''
   const initials = getInitials(displayName)
 
   return (

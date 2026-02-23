@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { FALLBACK_AUTH_COOKIE_NAME, hasFallbackSessionValue } from '@/lib/auth/fallback-session'
 import { getSupabaseConfig, isSupabaseAuthConfigured } from '@/lib/supabase/config'
 
 const PUBLIC_PATHS = new Set(['/', '/login', '/signup', '/pricing'])
@@ -23,13 +24,33 @@ function resolveSafeNextPath(nextPath: string | null): string {
   return nextPath
 }
 
-export async function middleware(request: NextRequest) {
-  if (!isSupabaseAuthConfigured()) {
-    return NextResponse.next()
-  }
+function createLoginRedirect(request: NextRequest): NextResponse {
+  const signInUrl = new URL('/login', request.url)
+  signInUrl.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`)
+  return NextResponse.redirect(signInUrl)
+}
 
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const isPublic = isPublicPath(pathname)
+
+  if (!isSupabaseAuthConfigured()) {
+    const hasFallbackSession = hasFallbackSessionValue(
+      request.cookies.get(FALLBACK_AUTH_COOKIE_NAME)?.value
+    )
+
+    if (!hasFallbackSession && !isPublic) {
+      return createLoginRedirect(request)
+    }
+
+    if (hasFallbackSession && AUTH_PAGE_PATHS.has(pathname)) {
+      const requestedNext = request.nextUrl.searchParams.get('next')
+      const redirectPath = resolveSafeNextPath(requestedNext)
+      return NextResponse.redirect(new URL(redirectPath, request.url))
+    }
+
+    return NextResponse.next()
+  }
 
   let response = NextResponse.next({
     request,
@@ -63,9 +84,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   if (!user && !isPublic) {
-    const signInUrl = new URL('/login', request.url)
-    signInUrl.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`)
-    return NextResponse.redirect(signInUrl)
+    return createLoginRedirect(request)
   }
 
   if (user && AUTH_PAGE_PATHS.has(pathname)) {
