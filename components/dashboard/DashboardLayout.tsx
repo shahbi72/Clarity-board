@@ -19,7 +19,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = React.useState(false)
   const [isDesktop, setIsDesktop] = React.useState(false)
-  const isAuthRoute = pathname.startsWith('/auth/')
+  const isAuthRoute =
+    pathname.startsWith('/auth/') || pathname === '/login' || pathname === '/signup'
 
   React.useEffect(() => {
     if (isAuthRoute) return
@@ -53,21 +54,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [mobileOpen, isDesktop])
 
   if (isAuthRoute) {
-    return <div className="min-h-screen bg-slate-100">{children}</div>
+    return <div className="min-h-screen bg-background">{children}</div>
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       <div className="flex min-h-screen">
         <Sidebar className="fixed inset-y-0 left-0 z-40 hidden w-72 lg:flex" datasetsCount={DATASET_COUNT} />
 
         <div className="flex min-h-screen flex-1 flex-col lg:pl-72">
-          <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-slate-200 bg-slate-50/95 px-4 backdrop-blur lg:hidden">
+          <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur lg:hidden">
             <button
               type="button"
               aria-label="Open navigation drawer"
               onClick={() => setMobileOpen(true)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-100"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-foreground shadow-sm transition-all duration-200 hover:bg-muted"
             >
               <PanelLeft className="size-4" />
             </button>
@@ -90,7 +91,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-72 max-w-[88vw] border-r border-slate-200 bg-white shadow-xl transition-all duration-200 lg:hidden',
+          'fixed inset-y-0 left-0 z-50 w-72 max-w-[88vw] border-r border-border bg-card shadow-xl transition-all duration-200 lg:hidden',
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >

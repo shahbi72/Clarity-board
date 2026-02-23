@@ -1,0 +1,61 @@
+{
+  "sidebar": {
+    "workspace": "Workspace",
+    "brand": "Clarityboard",
+    "searchAria": "Search reports and datasets",
+    "searchPlaceholder": "Search reports, datasets...",
+    "sections": {
+      "main": "Main",
+      "aiTools": "AI Tools",
+      "features": "Features"
+    },
+    "items": {
+      "dashboard": "Dashboard",
+      "uploadData": "Upload Data",
+      "datasets": "Datasets",
+      "records": "Records",
+      "aiAssistant": "AI Assistant",
+      "aiSuggestions": "AI Suggestions",
+      "reports": "Reports",
+      "pricing": "Pricing",
+      "users": "Users",
+      "features": "Features",
+      "products": "Products",
+      "settings": "Settings",
+      "help": "Help",
+      "privacyPolicy": "Privacy Policy"
+    },
+    "upgradePlan": "Upgrade Plan",
+    "accountSettings": "Account settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Monitor your active dataset and latest activity",
+    "unavailableTitle": "Dashboard unavailable",
+    "loading": "Loading dashboard...",
+    "retry": "Retry",
+    "noActiveDatasetTitle": "No active dataset selected",
+    "noActiveDatasetDescription": "Select a dataset in Datasets or upload a file to get started.",
+    "uploadData": "Upload Data",
+    "refresh": "Refresh",
+    "recentTransactions": "Recent Transactions",
+    "noTransactions": "No transactions found yet.",
+    "table": {
+      "date": "Date",
+      "description": "Description",
+      "category": "Category",
+      "amount": "Amount"
+    }
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signOut": "Sign out",
+    "signUp": "Sign Up",
+    "demoMode": "Demo Mode",
+    "profile": "Profile",
+    "billing": "Billing",
+    "language": "Language",
+    "notifications": "Notifications",
+    "toggleTheme": "Toggle theme"
+  }
+}

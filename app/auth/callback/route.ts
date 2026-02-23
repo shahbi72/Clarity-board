@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
   const code = request.nextUrl.searchParams.get('code')
   if (!code) {
-    const signInUrl = new URL('/auth/sign-in', request.url)
+    const signInUrl = new URL('/login', request.url)
     signInUrl.searchParams.set('error', 'Missing OAuth authorization code.')
     return NextResponse.redirect(signInUrl)
   }
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
   const { error } = await supabase.auth.exchangeCodeForSession(code)
   if (error) {
-    const signInUrl = new URL('/auth/sign-in', request.url)
+    const signInUrl = new URL('/login', request.url)
     signInUrl.searchParams.set('error', error.message)
     return NextResponse.redirect(signInUrl)
   }

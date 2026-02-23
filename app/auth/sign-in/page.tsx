@@ -1,10 +1,5 @@
-import { Suspense } from 'react'
-import { AuthCard } from '@/components/auth/AuthCard'
+import { redirect } from 'next/navigation'
 
 export default function SignInPage() {
-  return (
-    <Suspense fallback={null}>
-      <AuthCard mode="sign-in" />
-    </Suspense>
-  )
+  redirect('/login')
 }

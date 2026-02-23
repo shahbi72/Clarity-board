@@ -141,8 +141,8 @@ export function AuthCard({ mode }: AuthCardProps) {
     : 'Start with email/password or continue with Google or GitHub.'
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10">
-      <Card className="w-full max-w-md border-slate-200 shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
+      <Card className="w-full max-w-md border-border bg-card shadow-lg">
         <CardHeader className="space-y-4">
           <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Sparkles className="h-5 w-5" />
@@ -202,10 +202,10 @@ export function AuthCard({ mode }: AuthCardProps) {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-slate-200" />
+              <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-slate-500">or continue with email</span>
+              <span className="bg-card px-2 text-muted-foreground">or continue with email</span>
             </div>
           </div>
 
@@ -244,7 +244,7 @@ export function AuthCard({ mode }: AuthCardProps) {
           <p className="text-center text-sm text-muted-foreground">
             {isSignIn ? 'New to Clarityboard?' : 'Already have an account?'}{' '}
             <Link
-              href={isSignIn ? `/auth/sign-up${queryNext ? `?next=${encodeURIComponent(queryNext)}` : ''}` : `/auth/sign-in${queryNext ? `?next=${encodeURIComponent(queryNext)}` : ''}`}
+              href={isSignIn ? `/signup${queryNext ? `?next=${encodeURIComponent(queryNext)}` : ''}` : `/login${queryNext ? `?next=${encodeURIComponent(queryNext)}` : ''}`}
               className="font-medium text-primary hover:underline"
             >
               {isSignIn ? 'Create account' : 'Sign in'}

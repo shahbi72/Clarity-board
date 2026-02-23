@@ -1,11 +1,19 @@
 import React from 'react'
 import type { Metadata, Viewport } from 'next'
+import { cookies } from 'next/headers'
 import { IBM_Plex_Mono, Work_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout'
 import { LanguageProvider } from '@/components/language/language-provider'
 import { Toaster } from '@/components/ui/toaster'
+import {
+  DEFAULT_LANGUAGE,
+  getLanguageDirection,
+  isLanguageCode,
+  LANGUAGE_COOKIE_KEY,
+  type LanguageCode,
+} from '@/lib/language'
 import './globals.css'
 
 const workSans = Work_Sans({
@@ -47,7 +55,13 @@ function shouldRenderAnalytics(): boolean {
   return process.env.NODE_ENV === 'production' && process.env.VERCEL === '1'
 }
 
-export default function RootLayout({
+async function getInitialLanguage(): Promise<LanguageCode> {
+  const cookieStore = await cookies()
+  const cookieLanguage = cookieStore.get(LANGUAGE_COOKIE_KEY)?.value ?? null
+  return isLanguageCode(cookieLanguage) ? cookieLanguage : DEFAULT_LANGUAGE
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
@@ -55,13 +69,18 @@ export default function RootLayout({
   const envLabel = getDeployEnvLabel()
   const shortSha = getShortCommitSha()
   const renderAnalytics = shouldRenderAnalytics()
+  const initialLanguage = await getInitialLanguage()
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang={initialLanguage}
+      dir={getLanguageDirection(initialLanguage)}
+      suppressHydrationWarning
+    >
       <body className={`${workSans.variable} ${plexMono.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
+          defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >

@@ -1,0 +1,61 @@
+{
+  "sidebar": {
+    "workspace": "مساحة العمل",
+    "brand": "Clarityboard",
+    "searchAria": "ابحث في التقارير ومجموعات البيانات",
+    "searchPlaceholder": "ابحث في التقارير ومجموعات البيانات...",
+    "sections": {
+      "main": "الرئيسية",
+      "aiTools": "ادوات الذكاء الاصطناعي",
+      "features": "الميزات"
+    },
+    "items": {
+      "dashboard": "لوحة التحكم",
+      "uploadData": "رفع البيانات",
+      "datasets": "مجموعات البيانات",
+      "records": "السجلات",
+      "aiAssistant": "مساعد الذكاء الاصطناعي",
+      "aiSuggestions": "اقتراحات الذكاء الاصطناعي",
+      "reports": "التقارير",
+      "pricing": "الاسعار",
+      "users": "المستخدمون",
+      "features": "الميزات",
+      "products": "المنتجات",
+      "settings": "الاعدادات",
+      "help": "المساعدة",
+      "privacyPolicy": "سياسة الخصوصية"
+    },
+    "upgradePlan": "ترقية الخطة",
+    "accountSettings": "اعدادات الحساب"
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "subtitle": "تابع مجموعة البيانات النشطة واخر النشاطات",
+    "unavailableTitle": "لوحة التحكم غير متاحة",
+    "loading": "جار تحميل لوحة التحكم...",
+    "retry": "اعادة المحاولة",
+    "noActiveDatasetTitle": "لم يتم اختيار مجموعة بيانات نشطة",
+    "noActiveDatasetDescription": "اختر مجموعة بيانات من صفحة المجموعات او ارفع ملفا للبدء.",
+    "uploadData": "رفع البيانات",
+    "refresh": "تحديث",
+    "recentTransactions": "احدث المعاملات",
+    "noTransactions": "لا توجد معاملات بعد.",
+    "table": {
+      "date": "التاريخ",
+      "description": "الوصف",
+      "category": "الفئة",
+      "amount": "المبلغ"
+    }
+  },
+  "auth": {
+    "signIn": "تسجيل الدخول",
+    "signOut": "تسجيل الخروج",
+    "signUp": "انشاء حساب",
+    "demoMode": "وضع العرض",
+    "profile": "الملف الشخصي",
+    "billing": "الفوترة",
+    "language": "اللغة",
+    "notifications": "الاشعارات",
+    "toggleTheme": "تبديل المظهر"
+  }
+}

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { CreditCard, Languages, Loader2, LogOut, UserCircle2 } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
 import { getSupabaseBrowserClient, isSupabaseBrowserAuthConfigured } from '@/lib/supabase/client'
-import { useLanguagePreference } from '@/components/language/language-provider'
+import { useI18n, useLanguagePreference } from '@/components/language/language-provider'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -40,6 +40,8 @@ function getInitials(name: string): string {
 
 export function HeaderAuthMenu() {
   const router = useRouter()
+  const { t } = useI18n()
+  const tAuth = (key: string) => t(`auth.${key}`)
   const authConfigured = isSupabaseBrowserAuthConfigured()
   const supabase = React.useMemo(() => getSupabaseBrowserClient(), [])
   const { language, setLanguage } = useLanguagePreference()
@@ -75,14 +77,14 @@ export function HeaderAuthMenu() {
 
   const handleSignOut = async () => {
     if (!supabase) {
-      router.push('/auth/sign-in')
+      router.push('/login')
       return
     }
 
     setIsSigningOut(true)
     await supabase.auth.signOut()
     setUser(null)
-    router.push('/auth/sign-in')
+    router.push('/login')
     router.refresh()
     setIsSigningOut(false)
   }
@@ -96,7 +98,7 @@ export function HeaderAuthMenu() {
   if (!authConfigured) {
     return (
       <Button asChild variant="outline" size="sm">
-        <Link href="/dashboard">Demo Mode</Link>
+        <Link href="/dashboard">{tAuth('demoMode')}</Link>
       </Button>
     )
   }
@@ -105,7 +107,7 @@ export function HeaderAuthMenu() {
     return (
       <Button variant="ghost" size="icon" disabled>
         <Loader2 className="h-4 w-4 animate-spin" />
-        <span className="sr-only">Loading session</span>
+        <span className="sr-only">{tAuth('signIn')}</span>
       </Button>
     )
   }
@@ -113,7 +115,7 @@ export function HeaderAuthMenu() {
   if (!user) {
     return (
       <Button asChild size="sm">
-        <Link href="/auth/sign-in">Sign In</Link>
+        <Link href="/login">{tAuth('signIn')}</Link>
       </Button>
     )
   }
@@ -126,7 +128,7 @@ export function HeaderAuthMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-          <Avatar className="h-9 w-9 border border-slate-200">
+          <Avatar className="h-9 w-9 border border-border">
             <AvatarImage src="/placeholder-user.jpg" alt={displayName} />
             <AvatarFallback className="bg-primary/15 text-primary">{initials}</AvatarFallback>
           </Avatar>
@@ -140,16 +142,16 @@ export function HeaderAuthMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => router.push('/settings')}>
           <UserCircle2 className="mr-2 h-4 w-4" />
-          Profile
+          {tAuth('profile')}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => router.push('/pricing')}>
           <CreditCard className="mr-2 h-4 w-4" />
-          Billing
+          {tAuth('billing')}
         </DropdownMenuItem>
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <Languages className="mr-2 h-4 w-4" />
-            Language
+            {tAuth('language')}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-44">
             <DropdownMenuRadioGroup value={language} onValueChange={handleLanguageChange}>
@@ -173,7 +175,7 @@ export function HeaderAuthMenu() {
           ) : (
             <LogOut className="mr-2 h-4 w-4" />
           )}
-          Sign out
+          {tAuth('signOut')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

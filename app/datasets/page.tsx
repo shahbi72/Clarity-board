@@ -38,6 +38,7 @@ import type {
   DatasetListItem,
   DatasetsResponse,
 } from '@/lib/types/data-pipeline'
+import { useActiveDatasetStore } from '@/lib/stores/active-dataset-store'
 
 type PreviewState = {
   open: boolean
@@ -61,11 +62,13 @@ export default function DatasetsPage() {
 
   const [searchQuery, setSearchQuery] = useState('')
   const [datasets, setDatasets] = useState<DatasetListItem[]>([])
-  const [activeDatasetId, setActiveDatasetId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activatingId, setActivatingId] = useState<string | null>(null)
   const [preview, setPreview] = useState<PreviewState>(INITIAL_PREVIEW_STATE)
+  const activeDatasetId = useActiveDatasetStore((state) => state.activeDatasetId)
+  const setActiveDataset = useActiveDatasetStore((state) => state.setActiveDataset)
+  const setActiveDatasetId = useActiveDatasetStore((state) => state.setActiveDatasetId)
 
   const loadDatasets = useCallback(async () => {
     setIsLoading(true)
@@ -83,14 +86,26 @@ export default function DatasetsPage() {
       }
 
       setDatasets(payload.datasets)
-      setActiveDatasetId(payload.activeDatasetId)
+      const activeDataset =
+        payload.activeDatasetId != null
+          ? payload.datasets.find((dataset) => dataset.id === payload.activeDatasetId) ?? null
+          : null
+
+      setActiveDataset(
+        activeDataset
+          ? {
+              id: activeDataset.id,
+              name: activeDataset.name,
+            }
+          : null
+      )
     } catch (loadError) {
       const message = loadError instanceof Error ? loadError.message : 'Failed to load datasets.'
       setError(message)
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [setActiveDataset])
 
   useEffect(() => {
     void loadDatasets()
@@ -127,7 +142,15 @@ export default function DatasetsPage() {
         throw new Error(payload.error || 'Failed to activate dataset.')
       }
 
-      setActiveDatasetId(datasetId)
+      const datasetToActivate = datasets.find((dataset) => dataset.id === datasetId)
+      if (datasetToActivate) {
+        setActiveDataset({
+          id: datasetToActivate.id,
+          name: datasetToActivate.name,
+        })
+      } else {
+        setActiveDatasetId(datasetId)
+      }
       toast({
         title: 'Dataset activated',
         description: 'Dashboard will now use this dataset.',

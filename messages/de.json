@@ -1,0 +1,61 @@
+{
+  "sidebar": {
+    "workspace": "Arbeitsbereich",
+    "brand": "Clarityboard",
+    "searchAria": "Berichte und Datensatze durchsuchen",
+    "searchPlaceholder": "Berichte, Datensatze durchsuchen...",
+    "sections": {
+      "main": "Hauptbereich",
+      "aiTools": "KI-Tools",
+      "features": "Funktionen"
+    },
+    "items": {
+      "dashboard": "Dashboard",
+      "uploadData": "Daten hochladen",
+      "datasets": "Datensatze",
+      "records": "Eintrage",
+      "aiAssistant": "KI-Assistent",
+      "aiSuggestions": "KI-Vorschlage",
+      "reports": "Berichte",
+      "pricing": "Preise",
+      "users": "Benutzer",
+      "features": "Funktionen",
+      "products": "Produkte",
+      "settings": "Einstellungen",
+      "help": "Hilfe",
+      "privacyPolicy": "Datenschutz"
+    },
+    "upgradePlan": "Plan upgraden",
+    "accountSettings": "Kontoeinstellungen"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Uberwachen Sie Ihren aktiven Datensatz und die neuesten Aktivitaten",
+    "unavailableTitle": "Dashboard nicht verfugbar",
+    "loading": "Dashboard wird geladen...",
+    "retry": "Erneut versuchen",
+    "noActiveDatasetTitle": "Kein aktiver Datensatz ausgewahlt",
+    "noActiveDatasetDescription": "Wahlen Sie einen Datensatz unter Datensatze aus oder laden Sie eine Datei hoch.",
+    "uploadData": "Daten hochladen",
+    "refresh": "Aktualisieren",
+    "recentTransactions": "Letzte Transaktionen",
+    "noTransactions": "Noch keine Transaktionen gefunden.",
+    "table": {
+      "date": "Datum",
+      "description": "Beschreibung",
+      "category": "Kategorie",
+      "amount": "Betrag"
+    }
+  },
+  "auth": {
+    "signIn": "Anmelden",
+    "signOut": "Abmelden",
+    "signUp": "Registrieren",
+    "demoMode": "Demo-Modus",
+    "profile": "Profil",
+    "billing": "Abrechnung",
+    "language": "Sprache",
+    "notifications": "Benachrichtigungen",
+    "toggleTheme": "Design umschalten"
+  }
+}

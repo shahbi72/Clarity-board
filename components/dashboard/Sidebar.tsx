@@ -25,6 +25,7 @@ import {
 import type { ComponentType } from 'react'
 
 import { cn } from '@/lib/utils'
+import { useI18n } from '@/components/language/language-provider'
 
 type SidebarProps = {
   className?: string
@@ -34,38 +35,38 @@ type SidebarProps = {
 }
 
 type NavItem = {
-  label: string
+  labelKey: string
   href: string
   icon: ComponentType<{ className?: string }>
   badge?: number
 }
 
 type NavSection = {
-  title: string
+  titleKey: string
   items: NavItem[]
 }
 
 const CORE_NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Upload Data', href: '/upload', icon: UploadCloud },
-  { label: 'Datasets', href: '/datasets', icon: Database },
-  { label: 'Records', href: '/records', icon: FileText },
+  { labelKey: 'items.dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { labelKey: 'items.uploadData', href: '/upload', icon: UploadCloud },
+  { labelKey: 'items.datasets', href: '/datasets', icon: Database },
+  { labelKey: 'items.records', href: '/records', icon: FileText },
 ]
 
 const AI_NAV_ITEMS: NavItem[] = [
-  { label: 'AI Assistant', href: '/assistant', icon: MessageSquare },
-  { label: 'AI Suggestions', href: '/suggestions', icon: Lightbulb },
-  { label: 'Reports', href: '/suggestions', icon: BarChart3 },
+  { labelKey: 'items.aiAssistant', href: '/assistant', icon: MessageSquare },
+  { labelKey: 'items.aiSuggestions', href: '/suggestions', icon: Lightbulb },
+  { labelKey: 'items.reports', href: '/suggestions', icon: BarChart3 },
 ]
 
 const FEATURE_NAV_ITEMS: NavItem[] = [
-  { label: 'Pricing', href: '/pricing', icon: CreditCard },
-  { label: 'Users', href: '/users', icon: Users },
-  { label: 'Features', href: '/features', icon: Star },
-  { label: 'Products', href: '/products', icon: Package },
-  { label: 'Settings', href: '/settings', icon: Settings },
-  { label: 'Help', href: '/help', icon: HelpCircle },
-  { label: 'Privacy Policy', href: '/privacy-policy', icon: Shield },
+  { labelKey: 'items.pricing', href: '/pricing', icon: CreditCard },
+  { labelKey: 'items.users', href: '/users', icon: Users },
+  { labelKey: 'items.features', href: '/features', icon: Star },
+  { labelKey: 'items.products', href: '/products', icon: Package },
+  { labelKey: 'items.settings', href: '/settings', icon: Settings },
+  { labelKey: 'items.help', href: '/help', icon: HelpCircle },
+  { labelKey: 'items.privacyPolicy', href: '/privacy-policy', icon: Shield },
 ]
 
 function isActivePath(pathname: string, href: string) {
@@ -77,20 +78,22 @@ function isActivePath(pathname: string, href: string) {
 
 export function Sidebar({ className, mobile = false, onNavigate, datasetsCount = 0 }: SidebarProps) {
   const pathname = usePathname()
+  const { t } = useI18n()
+  const tSidebar = (key: string) => t(`sidebar.${key}`)
 
   const coreNavItems = CORE_NAV_ITEMS.map((item) =>
-    item.label === 'Datasets' ? { ...item, badge: datasetsCount } : item
+    item.href === '/datasets' ? { ...item, badge: datasetsCount } : item
   )
   const sections: NavSection[] = [
-    { title: 'Main', items: coreNavItems },
-    { title: 'AI Tools', items: AI_NAV_ITEMS },
-    { title: 'Features', items: FEATURE_NAV_ITEMS },
+    { titleKey: 'sections.main', items: coreNavItems },
+    { titleKey: 'sections.aiTools', items: AI_NAV_ITEMS },
+    { titleKey: 'sections.features', items: FEATURE_NAV_ITEMS },
   ]
 
   return (
     <aside
       className={cn(
-        'flex h-full flex-col border-r border-slate-200 bg-white px-3 py-4',
+        'flex h-full flex-col border-r border-border bg-card px-3 py-4',
         mobile ? 'w-full' : 'w-full',
         className
       )}
@@ -100,55 +103,56 @@ export function Sidebar({ className, mobile = false, onNavigate, datasetsCount =
           <Sparkles className="size-5" />
         </div>
         <div>
-          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Workspace</p>
-          <p className="text-base font-semibold text-slate-900">Clarityboard</p>
+          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{tSidebar('workspace')}</p>
+          <p className="text-base font-semibold text-foreground">{tSidebar('brand')}</p>
         </div>
       </div>
 
       <div className="mt-6">
         <label className="relative block">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
-            aria-label="Search reports and datasets"
-            placeholder="Search reports, datasets..."
-            className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-700 outline-none transition-all duration-200 focus:border-slate-300 focus:bg-white"
+            aria-label={tSidebar('searchAria')}
+            placeholder={tSidebar('searchPlaceholder')}
+            className="h-10 w-full rounded-xl border border-input bg-background pl-10 pr-3 text-sm text-foreground outline-none transition-all duration-200 focus:border-ring focus:bg-background"
           />
         </label>
       </div>
 
       <div className="mt-6 flex-1 space-y-5 overflow-y-auto pb-2">
         {sections.map((section) => (
-          <section key={section.title} className="space-y-1.5">
-            <p className="px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-              {section.title}
+          <section key={section.titleKey} className="space-y-1.5">
+            <p className="px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              {tSidebar(section.titleKey)}
             </p>
-            <nav aria-label={`${section.title} navigation`} className="space-y-1.5">
+            <nav aria-label={`${tSidebar(section.titleKey)} navigation`} className="space-y-1.5">
               {section.items.map((item) => {
                 const Icon = item.icon
                 const isActive = isActivePath(pathname, item.href)
+                const itemLabel = tSidebar(item.labelKey)
 
                 return (
                   <Link
-                    key={item.label}
+                    key={item.labelKey}
                     href={item.href}
-                    aria-label={item.label}
+                    aria-label={itemLabel}
                     onClick={onNavigate}
                     className={cn(
                       'group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all duration-200',
                       isActive
                         ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                        : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-100 hover:text-slate-900'
+                        : 'border-transparent text-muted-foreground hover:border-border hover:bg-muted hover:text-foreground'
                     )}
                   >
                     <Icon className="size-4 shrink-0" />
-                    <span>{item.label}</span>
+                    <span>{itemLabel}</span>
                     {typeof item.badge === 'number' ? (
                       <span
                         className={cn(
                           'ml-auto inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold',
                           isActive
                             ? 'bg-primary-foreground/20 text-primary-foreground'
-                            : 'bg-slate-200 text-slate-700'
+                            : 'bg-muted text-muted-foreground'
                         )}
                       >
                         {item.badge}
@@ -165,19 +169,19 @@ export function Sidebar({ className, mobile = false, onNavigate, datasetsCount =
       <div className="mt-auto space-y-3 pt-6">
         <button
           type="button"
-          aria-label="Upgrade plan"
+          aria-label={tSidebar('upgradePlan')}
           className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90"
         >
           <Zap className="size-4" />
-          <span>Upgrade Plan</span>
+          <span>{tSidebar('upgradePlan')}</span>
         </button>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+        <div className="rounded-xl border border-border bg-muted/40 p-3">
           <div className="flex items-center gap-3">
-            <UserCircle2 className="size-8 text-slate-500" />
+            <UserCircle2 className="size-8 text-muted-foreground" />
             <div>
-              <p className="text-sm font-semibold text-slate-900">Shahbaz</p>
-              <p className="text-xs text-slate-500">Account settings</p>
+              <p className="text-sm font-semibold text-foreground">Shahbaz</p>
+              <p className="text-xs text-muted-foreground">{tSidebar('accountSettings')}</p>
             </div>
           </div>
         </div>
