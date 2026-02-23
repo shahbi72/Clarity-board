@@ -1,6 +1,7 @@
 'use client'
 
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
+import { useLanguagePreference } from '@/components/language/language-provider'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,8 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { isLanguageCode, LANGUAGE_OPTIONS } from '@/lib/language'
 
 export default function SettingsPage() {
+  const { language, setLanguage } = useLanguagePreference()
+
   return (
     <div className="min-h-full">
       <DashboardHeader
@@ -83,6 +87,29 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 <Switch defaultChecked />
+              </div>
+              <Separator />
+              <div className="space-y-2">
+                <Label>Language</Label>
+                <Select
+                  value={language}
+                  onValueChange={(value) => {
+                    if (isLanguageCode(value)) {
+                      setLanguage(value)
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full md:w-64">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LANGUAGE_OPTIONS.map((option) => (
+                      <SelectItem key={option.code} value={option.code}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <Separator />
               <div className="space-y-2">

@@ -3,9 +3,10 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { CreditCard, Loader2, LogOut, UserCircle2 } from 'lucide-react'
+import { CreditCard, Languages, Loader2, LogOut, UserCircle2 } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
 import { getSupabaseBrowserClient, isSupabaseBrowserAuthConfigured } from '@/lib/supabase/client'
+import { useLanguagePreference } from '@/components/language/language-provider'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,9 +14,15 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { isLanguageCode, LANGUAGE_OPTIONS } from '@/lib/language'
 
 function getDisplayName(user: User): string {
   const fullName = user.user_metadata?.full_name
@@ -35,6 +42,7 @@ export function HeaderAuthMenu() {
   const router = useRouter()
   const authConfigured = isSupabaseBrowserAuthConfigured()
   const supabase = React.useMemo(() => getSupabaseBrowserClient(), [])
+  const { language, setLanguage } = useLanguagePreference()
 
   const [user, setUser] = React.useState<User | null>(null)
   const [isLoading, setIsLoading] = React.useState(authConfigured)
@@ -77,6 +85,12 @@ export function HeaderAuthMenu() {
     router.push('/auth/sign-in')
     router.refresh()
     setIsSigningOut(false)
+  }
+
+  const handleLanguageChange = (value: string) => {
+    if (isLanguageCode(value)) {
+      setLanguage(value)
+    }
   }
 
   if (!authConfigured) {
@@ -132,6 +146,21 @@ export function HeaderAuthMenu() {
           <CreditCard className="mr-2 h-4 w-4" />
           Billing
         </DropdownMenuItem>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Languages className="mr-2 h-4 w-4" />
+            Language
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-44">
+            <DropdownMenuRadioGroup value={language} onValueChange={handleLanguageChange}>
+              {LANGUAGE_OPTIONS.map((option) => (
+                <DropdownMenuRadioItem key={option.code} value={option.code}>
+                  {option.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={() => {

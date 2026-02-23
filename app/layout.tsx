@@ -4,6 +4,7 @@ import { IBM_Plex_Mono, Work_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout'
+import { LanguageProvider } from '@/components/language/language-provider'
 import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
@@ -64,8 +65,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <DashboardLayout>{children}</DashboardLayout>
-          <Toaster />
+          <LanguageProvider>
+            <DashboardLayout>{children}</DashboardLayout>
+            <Toaster />
+          </LanguageProvider>
         </ThemeProvider>
         <div
           className="fixed bottom-2 right-2 z-50 rounded-md border border-border/60 bg-background/85 px-2 py-1 text-[10px] text-muted-foreground backdrop-blur"
