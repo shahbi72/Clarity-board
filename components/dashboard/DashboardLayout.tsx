@@ -19,11 +19,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = React.useState(false)
   const [isDesktop, setIsDesktop] = React.useState(false)
-  const isAuthRoute =
-    pathname.startsWith('/auth/') || pathname === '/login' || pathname === '/signup'
+  const isProductRoute = pathname.startsWith('/app')
 
   React.useEffect(() => {
-    if (isAuthRoute) return
+    if (!isProductRoute) return
 
     const mediaQuery = window.matchMedia(DESKTOP_QUERY)
     setIsDesktop(mediaQuery.matches)
@@ -34,7 +33,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
     mediaQuery.addEventListener('change', handleMediaChange)
     return () => mediaQuery.removeEventListener('change', handleMediaChange)
-  }, [isAuthRoute])
+  }, [isProductRoute])
 
   React.useEffect(() => {
     setMobileOpen(false)
@@ -53,7 +52,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [mobileOpen, isDesktop])
 
-  if (isAuthRoute) {
+  if (!isProductRoute) {
     return <div className="min-h-screen bg-background">{children}</div>
   }
 

@@ -47,14 +47,14 @@ type NavSection = {
 }
 
 const CORE_NAV_ITEMS: NavItem[] = [
-  { labelKey: 'items.dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { labelKey: 'items.uploadData', href: '/upload', icon: UploadCloud },
-  { labelKey: 'items.datasets', href: '/datasets', icon: Database },
-  { labelKey: 'items.records', href: '/records', icon: FileText },
+  { labelKey: 'items.dashboard', href: '/app/dashboard', icon: LayoutDashboard },
+  { labelKey: 'items.uploadData', href: '/app/upload', icon: UploadCloud },
+  { labelKey: 'items.datasets', href: '/app/datasets', icon: Database },
+  { labelKey: 'items.records', href: '/app/records', icon: FileText },
 ]
 
 const AI_NAV_ITEMS: NavItem[] = [
-  { labelKey: 'items.aiAssistant', href: '/assistant', icon: MessageSquare },
+  { labelKey: 'items.aiAssistant', href: '/app/ai-assistant', icon: MessageSquare },
   { labelKey: 'items.aiSuggestions', href: '/suggestions', icon: Lightbulb },
   { labelKey: 'items.reports', href: '/suggestions', icon: BarChart3 },
 ]
@@ -70,8 +70,8 @@ const FEATURE_NAV_ITEMS: NavItem[] = [
 ]
 
 function isActivePath(pathname: string, href: string) {
-  if (href === '/dashboard') {
-    return pathname === '/dashboard'
+  if (href === '/app/dashboard') {
+    return pathname === '/app/dashboard' || pathname === '/app'
   }
   return pathname === href || pathname.startsWith(`${href}/`)
 }
@@ -82,7 +82,7 @@ export function Sidebar({ className, mobile = false, onNavigate, datasetsCount =
   const tSidebar = (key: string) => t(`sidebar.${key}`)
 
   const coreNavItems = CORE_NAV_ITEMS.map((item) =>
-    item.href === '/datasets' ? { ...item, badge: datasetsCount } : item
+    item.href === '/app/datasets' ? { ...item, badge: datasetsCount } : item
   )
   const sections: NavSection[] = [
     { titleKey: 'sections.main', items: coreNavItems },

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClient, isSupabaseAuthConfigured } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
-  const dashboardUrl = new URL('/dashboard', request.url)
+  const dashboardUrl = new URL('/app/dashboard', request.url)
   if (!isSupabaseAuthConfigured()) {
     return NextResponse.redirect(dashboardUrl)
   }

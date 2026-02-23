@@ -111,7 +111,7 @@ export default function SuggestionsPage() {
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
               <Button asChild>
-                <Link href="/datasets">
+                <Link href="/app/datasets">
                   Go to Datasets
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>

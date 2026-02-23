@@ -31,7 +31,7 @@ export function AIAssistantCard() {
           Ask about cash flow, overdue invoices, or profit trends.
         </div>
         <Button asChild size="sm" className="w-full">
-          <Link href="/assistant">Open AI assistant</Link>
+          <Link href="/app/ai-assistant">Open AI assistant</Link>
         </Button>
       </CardContent>
     </Card>

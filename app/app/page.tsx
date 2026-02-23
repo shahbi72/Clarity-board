@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
-export default function DashboardLegacyPage() {
+export default function AppIndexPage() {
   redirect('/app/dashboard')
 }

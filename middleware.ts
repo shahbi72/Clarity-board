@@ -3,27 +3,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { FALLBACK_AUTH_COOKIE_NAME, hasFallbackSessionValue } from '@/lib/auth/fallback-session'
 import { getSupabaseConfig, isSupabaseAuthConfigured } from '@/lib/supabase/config'
 
-const PUBLIC_PATHS = new Set(['/', '/login', '/signup', '/pricing'])
-const PUBLIC_PATH_PREFIXES = ['/auth/callback', '/auth/sign-in', '/auth/sign-up']
-const AUTH_PAGE_PATHS = new Set(['/login', '/signup', '/auth/sign-in', '/auth/sign-up'])
-
-function isPublicPath(pathname: string): boolean {
-  if (PUBLIC_PATHS.has(pathname)) return true
-  return PUBLIC_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
-}
-
-function resolveSafeNextPath(nextPath: string | null): string {
-  if (!nextPath || !nextPath.startsWith('/')) {
-    return '/dashboard'
-  }
-
-  if (AUTH_PAGE_PATHS.has(nextPath)) {
-    return '/dashboard'
-  }
-
-  return nextPath
-}
-
 function createLoginRedirect(request: NextRequest): NextResponse {
   const signInUrl = new URL('/login', request.url)
   signInUrl.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`)
@@ -31,25 +10,15 @@ function createLoginRedirect(request: NextRequest): NextResponse {
 }
 
 export async function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
-  const isPublic = isPublicPath(pathname)
+  if (!request.nextUrl.pathname.startsWith('/app')) {
+    return NextResponse.next()
+  }
 
   if (!isSupabaseAuthConfigured()) {
-    const hasFallbackSession = hasFallbackSessionValue(
-      request.cookies.get(FALLBACK_AUTH_COOKIE_NAME)?.value
-    )
-
-    if (!hasFallbackSession && !isPublic) {
-      return createLoginRedirect(request)
+    if (hasFallbackSessionValue(request.cookies.get(FALLBACK_AUTH_COOKIE_NAME)?.value)) {
+      return NextResponse.next()
     }
-
-    if (hasFallbackSession && AUTH_PAGE_PATHS.has(pathname)) {
-      const requestedNext = request.nextUrl.searchParams.get('next')
-      const redirectPath = resolveSafeNextPath(requestedNext)
-      return NextResponse.redirect(new URL(redirectPath, request.url))
-    }
-
-    return NextResponse.next()
+    return createLoginRedirect(request)
   }
 
   let response = NextResponse.next({
@@ -83,21 +52,13 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user && !isPublic) {
+  if (!user) {
     return createLoginRedirect(request)
-  }
-
-  if (user && AUTH_PAGE_PATHS.has(pathname)) {
-    const requestedNext = request.nextUrl.searchParams.get('next')
-    const redirectPath = resolveSafeNextPath(requestedNext)
-    return NextResponse.redirect(new URL(redirectPath, request.url))
   }
 
   return response
 }
 
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|_next/data|favicon.ico|icon.svg|icon-light-32x32.png|icon-dark-32x32.png|apple-icon.png|.*\\..*).*)',
-  ],
+  matcher: ['/app/:path*'],
 }

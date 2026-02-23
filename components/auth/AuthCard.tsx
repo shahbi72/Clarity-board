@@ -36,7 +36,7 @@ export function AuthCard({ mode }: AuthCardProps) {
   const [info, setInfo] = React.useState<string | null>(null)
 
   const queryNext = searchParams.get('next')
-  const nextPath = queryNext && queryNext.startsWith('/') ? queryNext : '/dashboard'
+  const nextPath = queryNext && queryNext.startsWith('/') ? queryNext : '/app/dashboard'
 
   React.useEffect(() => {
     const queryError = searchParams.get('error')

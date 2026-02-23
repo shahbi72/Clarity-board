@@ -26,23 +26,23 @@ import { cn } from '@/lib/utils'
 const mainNavItems = [
   {
     title: 'Dashboard',
-    href: '/dashboard',
+    href: '/app/dashboard',
     icon: LayoutDashboard,
   },
   {
     title: 'Upload Data',
-    href: '/upload',
+    href: '/app/upload',
     icon: Upload,
   },
   {
     title: 'Datasets',
-    href: '/datasets',
+    href: '/app/datasets',
     icon: Database,
     badge: '5',
   },
   {
     title: 'Records',
-    href: '/records',
+    href: '/app/records',
     icon: Table2,
   },
 ]
@@ -50,7 +50,7 @@ const mainNavItems = [
 const aiNavItems = [
   {
     title: 'AI Assistant',
-    href: '/assistant',
+    href: '/app/ai-assistant',
     icon: MessageSquare,
   },
   {
