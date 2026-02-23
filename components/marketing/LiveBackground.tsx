@@ -29,10 +29,10 @@ const DEFAULT_DESKTOP_PARTICLES = 80
 const DEFAULT_MOBILE_PARTICLES = 40
 
 const COLOR_POOL: Array<[number, number, number]> = [
-  [34, 74, 150],  // deep navy-blue
-  [66, 118, 212], // soft blue
-  [94, 153, 236], // soft blue accent
-  [121, 93, 214], // occasional violet
+  [76, 114, 196],  // deep navy-blue
+  [98, 145, 224],  // soft blue
+  [142, 176, 242], // soft blue accent
+  [152, 122, 236], // occasional violet
 ]
 
 function randomBetween(min: number, max: number): number {
@@ -49,7 +49,7 @@ function pickColor(): [number, number, number] {
 
 function createParticle(width: number, height: number): Particle {
   const type: ParticleType = Math.random() < 0.78 ? 'dot' : 'dash'
-  const speed = randomBetween(0.015, 0.085)
+  const speed = randomBetween(0.02, 0.1)
   const direction = randomBetween(0, Math.PI * 2)
   const length = type === 'dash' ? randomBetween(5, 12) : 0
 
@@ -58,8 +58,8 @@ function createParticle(width: number, height: number): Particle {
     y: randomBetween(0, height),
     vx: Math.cos(direction) * speed,
     vy: Math.sin(direction) * speed,
-    size: type === 'dot' ? randomBetween(0.5, 1.7) : randomBetween(0.8, 1.3),
-    alpha: randomBetween(0.06, 0.18),
+    size: type === 'dot' ? randomBetween(0.55, 1.6) : randomBetween(0.7, 1.2),
+    alpha: randomBetween(0.12, 0.28),
     type,
     length,
     angle: randomBetween(0, Math.PI * 2),

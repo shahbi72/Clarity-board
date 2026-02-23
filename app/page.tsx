@@ -48,7 +48,7 @@ export default function LandingPage() {
             className="pointer-events-none absolute inset-0 z-[2]"
             style={{
               background:
-                'radial-gradient(circle at 50% 42%, color-mix(in oklch, var(--background) 88%, white) 0%, color-mix(in oklch, var(--background) 72%, white) 38%, color-mix(in oklch, var(--background) 24%, transparent) 72%, transparent 100%)',
+                'radial-gradient(circle at 50% 42%, rgba(8, 22, 50, 0.14) 0%, rgba(8, 22, 50, 0.1) 36%, rgba(8, 20, 42, 0.28) 72%, rgba(6, 14, 30, 0.44) 100%)',
             }}
           />
 
