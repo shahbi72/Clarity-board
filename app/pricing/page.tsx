@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Check } from 'lucide-react'
+import { ClarityboardLogo } from '@/components/branding/ClarityboardLogo'
 import { Button } from '@/components/ui/button'
 
 const TIERS = [
@@ -30,9 +31,7 @@ export default function PricingPage() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border/70">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
-            Clarityboard
-          </Link>
+          <ClarityboardLogo href="/" withBackground imageClassName="h-8 w-auto md:h-10" />
           <Button asChild variant="ghost">
             <Link href="/login">Sign in</Link>
           </Button>

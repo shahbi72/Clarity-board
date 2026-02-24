@@ -28,10 +28,35 @@ const plexMono = IBM_Plex_Mono({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://clarity-board-ui-build.vercel.app'
+  ),
   title: 'ClarityBoard - Transform Messy Data into Business Insights',
   description:
     'Upload any file type - CSV, Excel, PDF, JSON, images. ClarityBoard automatically cleans, structures, and analyzes your data into powerful business dashboards.',
   keywords: ['business intelligence', 'data analytics', 'dashboard', 'data cleaning', 'AI insights'],
+  openGraph: {
+    title: 'ClarityBoard - Transform Messy Data into Business Insights',
+    description:
+      'Upload any file type - CSV, Excel, PDF, JSON, images. ClarityBoard automatically cleans, structures, and analyzes your data into powerful business dashboards.',
+    images: [
+      {
+        url: '/assets/logo/clarityboard-logo.png',
+        width: 865,
+        height: 233,
+        alt: 'Clarityboard Logo',
+      },
+    ],
+  },
+  icons: {
+    icon: [
+      { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+      { url: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: ['/favicon-32x32.png'],
+    apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
   generator: 'v0.app',
 }
 

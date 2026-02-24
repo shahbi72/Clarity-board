@@ -89,8 +89,14 @@ export default function PrivacyPolicyPage() {
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-muted-foreground">
               <p>
-                For privacy questions, reach out to privacy@clarityboard.com or your
-                account manager.
+                Contact us at{' '}
+                <a
+                  href="mailto:clarityboard.app@gmail.com"
+                  className="font-medium text-foreground underline-offset-4 hover:underline"
+                >
+                  clarityboard.app@gmail.com
+                </a>{' '}
+                for privacy questions.
               </p>
             </CardContent>
           </Card>

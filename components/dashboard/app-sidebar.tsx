@@ -12,7 +12,6 @@ import {
   CreditCard,
   Settings,
   HelpCircle,
-  Sparkles,
   Search,
   Users,
   Star,
@@ -21,6 +20,7 @@ import {
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { ClarityboardLogo } from '@/components/branding/ClarityboardLogo'
 import { cn } from '@/lib/utils'
 
 const mainNavItems = [
@@ -115,15 +115,7 @@ export function AppSidebar({ className, onNavigate }: AppSidebarProps) {
   return (
     <aside className={cn('flex h-full flex-col bg-white', className)}>
       <div className="border-b border-slate-200/70 px-5 py-5">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="icon-chip icon-chip-primary h-9 w-9">
-            <Sparkles className="h-5 w-5" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-base font-semibold text-slate-900">Clarityboard</span>
-            <span className="text-xs text-slate-500">Accounting overview</span>
-          </div>
-        </Link>
+        <ClarityboardLogo href="/" imageClassName="h-8 w-auto" />
       </div>
 
       <div className="flex-1 space-y-6 overflow-y-auto px-4 py-5">

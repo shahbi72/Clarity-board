@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, BarChart3, Boxes, DollarSign } from 'lucide-react'
+import { ClarityboardLogo } from '@/components/branding/ClarityboardLogo'
 import { LiveBackground } from '@/components/marketing/LiveBackground'
 import { Button } from '@/components/ui/button'
 
@@ -26,9 +27,12 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border/70">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
-            Clarityboard
-          </Link>
+          <ClarityboardLogo
+            href="/"
+            priority
+            withBackground
+            imageClassName="h-8 w-auto md:h-10"
+          />
           <div className="flex items-center gap-2">
             <Button asChild variant="ghost">
               <Link href="/login">Sign in</Link>
@@ -53,6 +57,13 @@ export default function LandingPage() {
           />
 
           <div className="relative z-10 mx-auto max-w-3xl">
+            <div className="mb-6 flex justify-center">
+              <ClarityboardLogo
+                href="/"
+                withBackground
+                imageClassName="h-9 w-auto md:h-10"
+              />
+            </div>
             <h1 className="text-balance text-4xl font-semibold tracking-tight text-slate-50 md:text-5xl">
               Clarityboard
             </h1>
@@ -93,7 +104,14 @@ export default function LandingPage() {
 
       <footer className="border-t border-border/70">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 text-sm text-muted-foreground">
-          <span>Copyright {new Date().getFullYear()} Clarityboard</span>
+          <div className="flex items-center">
+            <ClarityboardLogo
+              href="/"
+              withBackground
+              imageClassName="h-7 w-auto md:h-8"
+            />
+            <span>Copyright {new Date().getFullYear()} Clarityboard</span>
+          </div>
           <Link href="/privacy-policy" className="hover:text-foreground">
             Privacy Policy
           </Link>

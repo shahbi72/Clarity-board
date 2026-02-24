@@ -151,7 +151,15 @@ export default function HelpPage() {
                   </div>
                   <div>
                     <h3 className="font-medium text-foreground">Email Support</h3>
-                    <p className="text-sm text-muted-foreground">support@clarityboard.com</p>
+                    <p className="text-sm text-muted-foreground">
+                      Contact us at{' '}
+                      <a
+                        href="mailto:clarityboard.app@gmail.com"
+                        className="underline-offset-4 hover:underline"
+                      >
+                        clarityboard.app@gmail.com
+                      </a>
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 rounded-lg border border-border p-4">

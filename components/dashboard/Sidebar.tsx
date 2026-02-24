@@ -15,7 +15,6 @@ import {
   Search,
   Settings,
   Shield,
-  Sparkles,
   UploadCloud,
   UserCircle2,
   Users,
@@ -24,6 +23,7 @@ import {
 } from 'lucide-react'
 import type { ComponentType } from 'react'
 
+import { ClarityboardLogo } from '@/components/branding/ClarityboardLogo'
 import { cn } from '@/lib/utils'
 import { useI18n } from '@/components/language/language-provider'
 
@@ -98,13 +98,14 @@ export function Sidebar({ className, mobile = false, onNavigate, datasetsCount =
         className
       )}
     >
-      <div className="flex items-center gap-3 px-2">
-        <div className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-          <Sparkles className="size-5" />
-        </div>
+      <div className="space-y-2 px-2">
+        <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{tSidebar('workspace')}</p>
         <div>
-          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{tSidebar('workspace')}</p>
-          <p className="text-base font-semibold text-foreground">{tSidebar('brand')}</p>
+          <ClarityboardLogo
+            href="/"
+            withBackground
+            imageClassName="h-8 w-auto"
+          />
         </div>
       </div>
 

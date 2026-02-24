@@ -41,7 +41,12 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="john@example.com" defaultValue="john@example.com" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="clarityboard.app@gmail.com"
+                    defaultValue="clarityboard.app@gmail.com"
+                  />
                 </div>
               </div>
               <div className="space-y-2">

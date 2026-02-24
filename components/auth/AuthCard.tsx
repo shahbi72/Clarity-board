@@ -3,7 +3,8 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Chrome, Github, Loader2, Sparkles } from 'lucide-react'
+import { Chrome, Github, Loader2 } from 'lucide-react'
+import { ClarityboardLogo } from '@/components/branding/ClarityboardLogo'
 import {
   createFallbackSessionCookie,
   hasFallbackSessionFromCookieHeader,
@@ -158,9 +159,7 @@ export function AuthCard({ mode }: AuthCardProps) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
       <Card className="w-full max-w-md border-border bg-card shadow-lg">
         <CardHeader className="space-y-4">
-          <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Sparkles className="h-5 w-5" />
-          </div>
+          <ClarityboardLogo href="/" withBackground imageClassName="h-8 w-auto" />
           <div className="space-y-1">
             <CardTitle className="text-2xl">{title}</CardTitle>
             <CardDescription>{description}</CardDescription>
@@ -229,7 +228,7 @@ export function AuthCard({ mode }: AuthCardProps) {
               <Input
                 id={`${mode}-email`}
                 type="email"
-                placeholder="name@company.com"
+                placeholder="clarityboard.app@gmail.com"
                 autoComplete="email"
                 required
                 value={email}
