@@ -48,3 +48,7 @@ export function clearFallbackSessionCookie(options?: { secure?: boolean }): stri
   const secureDirective = buildSecureDirective(Boolean(options?.secure))
   return `${FALLBACK_AUTH_COOKIE_NAME}=; Path=/; Max-Age=0; SameSite=Lax${secureDirective}`
 }
+
+export function isFallbackAuthEnabled(): boolean {
+  return process.env.NODE_ENV !== 'production'
+}

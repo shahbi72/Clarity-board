@@ -22,7 +22,9 @@ export default function RecordsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
-  const filteredProducts = mockProducts.filter((product) => {
+  const recordsSource = process.env.NODE_ENV === 'production' ? [] : mockProducts
+
+  const filteredProducts = recordsSource.filter((product) => {
     if (statusFilter !== 'all' && product.status !== statusFilter) {
       return false
     }

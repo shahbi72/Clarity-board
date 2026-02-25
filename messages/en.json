@@ -1,4 +1,7 @@
 {
+  "common": {
+    "searchDatasets": "Search datasets, records..."
+  },
   "sidebar": {
     "workspace": "Workspace",
     "brand": "Clarityboard",
@@ -34,10 +37,11 @@
     "unavailableTitle": "Dashboard unavailable",
     "loading": "Loading dashboard...",
     "retry": "Retry",
-    "noActiveDatasetTitle": "No active dataset selected",
-    "noActiveDatasetDescription": "Select a dataset in Datasets or upload a file to get started.",
+    "noActiveDatasetTitle": "Upload your data",
+    "noActiveDatasetDescription": "You don't have an active dataset yet. Upload a file to start seeing insights.",
     "uploadData": "Upload Data",
     "refresh": "Refresh",
+    "activeDatasetFallback": "Active dataset",
     "recentTransactions": "Recent Transactions",
     "noTransactions": "No transactions found yet.",
     "table": {
@@ -57,5 +61,85 @@
     "language": "Language",
     "notifications": "Notifications",
     "toggleTheme": "Toggle theme"
+  },
+  "authCard": {
+    "signInTitle": "Sign in to Clarityboard",
+    "signUpTitle": "Create your Clarityboard account",
+    "signInDescription": "Use your credentials or continue with Google or GitHub.",
+    "signUpDescription": "Start with email/password or continue with Google or GitHub.",
+    "fallbackModeEnabled": "Supabase auth env vars are missing. Local fallback auth is active for this deployment.",
+    "authUnavailable": "Authentication is unavailable. Configure Supabase auth to continue.",
+    "oauthUnavailable": "OAuth sign-in requires Supabase auth configuration.",
+    "verifyEmailNotice": "Account created. Check your inbox to verify your email before accessing the dashboard.",
+    "passwordWeak": "Please use a stronger password before continuing.",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithGithub": "Continue with GitHub",
+    "orWithEmail": "or continue with email",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "passwordPlaceholderSignIn": "Enter your password",
+    "passwordPlaceholderSignUp": "Create a strong password",
+    "passwordRequirement": {
+      "minLength": "At least 8 characters",
+      "lowercase": "At least one lowercase letter",
+      "uppercase": "At least one uppercase letter",
+      "numberOrSymbol": "At least one number or symbol"
+    },
+    "newUser": "New to Clarityboard?",
+    "existingUser": "Already have an account?",
+    "createAccount": "Create account",
+    "termsPrefix": "By continuing, you agree to our",
+    "terms": "Terms",
+    "and": "and",
+    "privacyPolicy": "Privacy Policy"
+  },
+  "verifyEmail": {
+    "title": "Verify your email",
+    "description": "Please verify your email address before accessing your dashboard.",
+    "resend": "Resend verification email",
+    "iVerified": "I've verified my email",
+    "backToSignIn": "Back to sign in",
+    "resendSuccess": "Verification email sent. Check your inbox.",
+    "resendError": "Unable to resend verification email right now.",
+    "resendUnavailable": "Verification resend is unavailable right now.",
+    "missingEmail": "Unable to determine your account email."
+  },
+  "onboarding": {
+    "title": "Complete your profile",
+    "description": "We need a few details to personalize your workspace.",
+    "loading": "Loading your profile...",
+    "loadError": "Unable to load your profile right now.",
+    "saveError": "Unable to save your profile right now.",
+    "requiredFields": "Please complete all required fields.",
+    "companySizeRequired": "Please select your company size.",
+    "languageRequired": "Please select your language.",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "companyName": "Company name",
+    "companySize": "Company size",
+    "companySizePlaceholder": "Select company size",
+    "language": "Language",
+    "submit": "Save and continue"
+  },
+  "settings": {
+    "pageTitle": "Settings",
+    "pageDescription": "Manage your profile and preferences",
+    "profileTitle": "Profile",
+    "profileDescription": "Update your account details and language preference.",
+    "loading": "Loading settings...",
+    "loadError": "Unable to load settings.",
+    "saveError": "Unable to save changes.",
+    "saveSuccess": "Settings updated successfully.",
+    "requiredFields": "Please complete all required fields.",
+    "companySizeRequired": "Please select your company size.",
+    "languageRequired": "Please select your language.",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email",
+    "companyName": "Company name",
+    "companySize": "Company size",
+    "companySizePlaceholder": "Select company size",
+    "language": "Language",
+    "save": "Save changes"
   }
 }

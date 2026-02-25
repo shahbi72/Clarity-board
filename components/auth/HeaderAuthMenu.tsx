@@ -8,6 +8,7 @@ import type { User } from '@supabase/supabase-js'
 import {
   clearFallbackSessionCookie,
   hasFallbackSessionFromCookieHeader,
+  isFallbackAuthEnabled,
 } from '@/lib/auth/fallback-session'
 import { getSupabaseBrowserClient, isSupabaseBrowserAuthConfigured } from '@/lib/supabase/client'
 import { useI18n, useLanguagePreference } from '@/components/language/language-provider'
@@ -47,6 +48,7 @@ export function HeaderAuthMenu() {
   const { t } = useI18n()
   const tAuth = (key: string) => t(`auth.${key}`)
   const authConfigured = isSupabaseBrowserAuthConfigured()
+  const fallbackEnabled = isFallbackAuthEnabled()
   const supabase = React.useMemo(() => getSupabaseBrowserClient(), [])
   const { language, setLanguage } = useLanguagePreference()
 
@@ -58,7 +60,7 @@ export function HeaderAuthMenu() {
   React.useEffect(() => {
     if (!authConfigured || !supabase) {
       setIsLoading(false)
-      if (typeof document !== 'undefined') {
+      if (fallbackEnabled && typeof document !== 'undefined') {
         setHasFallbackSession(hasFallbackSessionFromCookieHeader(document.cookie))
       }
       return
@@ -81,10 +83,10 @@ export function HeaderAuthMenu() {
     return () => {
       subscription.unsubscribe()
     }
-  }, [authConfigured, supabase])
+  }, [authConfigured, fallbackEnabled, supabase])
 
   const handleSignOut = async () => {
-    if (!authConfigured || !supabase) {
+    if ((!authConfigured || !supabase) && fallbackEnabled) {
       setIsSigningOut(true)
       if (typeof document !== 'undefined') {
         const secure = window.location.protocol === 'https:'
@@ -98,7 +100,9 @@ export function HeaderAuthMenu() {
     }
 
     setIsSigningOut(true)
-    await supabase.auth.signOut()
+    if (supabase) {
+      await supabase.auth.signOut()
+    }
     setUser(null)
     router.push('/login')
     router.refresh()
@@ -120,7 +124,7 @@ export function HeaderAuthMenu() {
     )
   }
 
-  const isAuthenticated = authConfigured ? Boolean(user) : hasFallbackSession
+  const isAuthenticated = authConfigured ? Boolean(user) : fallbackEnabled && hasFallbackSession
 
   if (!isAuthenticated) {
     return (

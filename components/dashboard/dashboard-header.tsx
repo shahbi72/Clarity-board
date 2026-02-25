@@ -15,6 +15,7 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ title, description }: DashboardHeaderProps) {
   const { t } = useI18n()
   const tAuth = (key: string) => t(`auth.${key}`)
+  const tCommon = (key: string) => t(`common.${key}`)
   const { setTheme, resolvedTheme } = useTheme()
 
   return (
@@ -30,10 +31,10 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
 
       <div className="flex items-center gap-2 md:gap-4">
         <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground rtl:left-auto rtl:right-3" />
           <Input
-            placeholder="Search datasets, records..."
-            className="w-64 pl-9"
+            placeholder={tCommon('searchDatasets')}
+            className="w-64 pl-9 rtl:pl-3 rtl:pr-9"
           />
         </div>
 

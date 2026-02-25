@@ -152,7 +152,7 @@ export default function DashboardPage() {
     activeDatasetId
       ? {
           id: activeDatasetId,
-          name: activeDatasetName ?? 'Active dataset',
+          name: activeDatasetName ?? t('dashboard.activeDatasetFallback'),
         }
       : null
   )

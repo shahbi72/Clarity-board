@@ -1,13 +1,9 @@
 'use client'
 
+import * as React from 'react'
+import { Loader2 } from 'lucide-react'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
-import { useLanguagePreference } from '@/components/language/language-provider'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { Separator } from '@/components/ui/separator'
+import { useI18n, useLanguagePreference } from '@/components/language/language-provider'
 import {
   Select,
   SelectContent,
@@ -15,158 +11,253 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { isLanguageCode, LANGUAGE_OPTIONS } from '@/lib/language'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { LANGUAGE_OPTIONS, isLanguageCode, type LanguageCode } from '@/lib/language'
+import { COMPANY_SIZE_OPTIONS, isCompanySize, type CompanySize, type UserProfile } from '@/lib/profile'
+
+type ProfileApiResponse = {
+  profile: UserProfile
+  email: string
+  isComplete: boolean
+  error?: string
+}
+
+type FormState = {
+  firstName: string
+  lastName: string
+  companyName: string
+  companySize: CompanySize | ''
+  language: LanguageCode
+}
+
+const INITIAL_FORM: FormState = {
+  firstName: '',
+  lastName: '',
+  companyName: '',
+  companySize: '',
+  language: 'en',
+}
 
 export default function SettingsPage() {
-  const { language, setLanguage } = useLanguagePreference()
+  const { t } = useI18n()
+  const tSettings = React.useCallback((key: string) => t(`settings.${key}`), [t])
+  const { setLanguage } = useLanguagePreference()
+
+  const [email, setEmail] = React.useState('')
+  const [form, setForm] = React.useState<FormState>(INITIAL_FORM)
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [isSaving, setIsSaving] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const [success, setSuccess] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    const loadProfile = async () => {
+      setIsLoading(true)
+      setError(null)
+      setSuccess(null)
+
+      try {
+        const response = await fetch('/api/profile', { cache: 'no-store' })
+        const payload = (await response.json()) as ProfileApiResponse
+
+        if (!response.ok || payload.error) {
+          throw new Error(payload.error ?? tSettings('loadError'))
+        }
+
+        setEmail(payload.email)
+        setForm({
+          firstName: payload.profile.firstName,
+          lastName: payload.profile.lastName,
+          companyName: payload.profile.companyName,
+          companySize: payload.profile.companySize,
+          language: payload.profile.language,
+        })
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : tSettings('loadError'))
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    void loadProfile()
+  }, [tSettings])
+
+  const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError(null)
+    setSuccess(null)
+
+    if (!form.firstName.trim() || !form.lastName.trim() || !form.companyName.trim()) {
+      setError(tSettings('requiredFields'))
+      return
+    }
+    if (!isCompanySize(form.companySize)) {
+      setError(tSettings('companySizeRequired'))
+      return
+    }
+    if (!isLanguageCode(form.language)) {
+      setError(tSettings('languageRequired'))
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: form.firstName,
+          lastName: form.lastName,
+          companyName: form.companyName,
+          companySize: form.companySize,
+          language: form.language,
+        }),
+      })
+      const payload = (await response.json()) as ProfileApiResponse
+
+      if (!response.ok || payload.error) {
+        throw new Error(payload.error ?? tSettings('saveError'))
+      }
+
+      setLanguage(payload.profile.language)
+      setSuccess(tSettings('saveSuccess'))
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : tSettings('saveError'))
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   return (
     <div className="min-h-full">
-      <DashboardHeader
-        title="Settings"
-        description="Manage your account and preferences"
-      />
-      <main className="flex-1 space-y-6 p-4 md:p-6">
-          {/* Profile Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile</CardTitle>
-              <CardDescription>Manage your account information</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" placeholder="John Doe" defaultValue="John Doe" />
+      <DashboardHeader title={tSettings('pageTitle')} description={tSettings('pageDescription')} />
+      <main className="flex-1 p-4 md:p-6">
+        <Card className="mx-auto w-full max-w-3xl">
+          <CardHeader>
+            <CardTitle>{tSettings('profileTitle')}</CardTitle>
+            <CardDescription>{tSettings('profileDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex min-h-32 items-center justify-center text-sm text-muted-foreground">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {tSettings('loading')}
+              </div>
+            ) : (
+              <form className="space-y-4" onSubmit={handleSave}>
+                {error ? (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                    {error}
+                  </div>
+                ) : null}
+                {success ? (
+                  <div className="rounded-md border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800">
+                    {success}
+                  </div>
+                ) : null}
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="settings-first-name">{tSettings('firstName')}</Label>
+                    <Input
+                      id="settings-first-name"
+                      value={form.firstName}
+                      onChange={(event) =>
+                        setForm((prev) => ({ ...prev, firstName: event.target.value }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="settings-last-name">{tSettings('lastName')}</Label>
+                    <Input
+                      id="settings-last-name"
+                      value={form.lastName}
+                      onChange={(event) =>
+                        setForm((prev) => ({ ...prev, lastName: event.target.value }))
+                      }
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="settings-email">{tSettings('email')}</Label>
+                  <Input id="settings-email" value={email} readOnly disabled />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="settings-company-name">{tSettings('companyName')}</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="clarityboard.app@gmail.com"
-                    defaultValue="clarityboard.app@gmail.com"
+                    id="settings-company-name"
+                    value={form.companyName}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, companyName: event.target.value }))
+                    }
+                    required
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="company">Company</Label>
-                <Input id="company" placeholder="Acme Inc." defaultValue="Acme Inc." />
-              </div>
-              <Button>Save Changes</Button>
-            </CardContent>
-          </Card>
 
-          {/* Preferences */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Preferences</CardTitle>
-              <CardDescription>Customize your experience</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-foreground">Email Notifications</p>
-                  <p className="text-sm text-muted-foreground">
-                    Receive email updates about your datasets
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-foreground">Weekly Reports</p>
-                  <p className="text-sm text-muted-foreground">
-                    Get a summary of your business insights
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-foreground">AI Suggestions</p>
-                  <p className="text-sm text-muted-foreground">
-                    Enable AI-powered recommendations
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <Separator />
-              <div className="space-y-2">
-                <Label>Language</Label>
-                <Select
-                  value={language}
-                  onValueChange={(value) => {
-                    if (isLanguageCode(value)) {
-                      setLanguage(value)
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-full md:w-64">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LANGUAGE_OPTIONS.map((option) => (
-                      <SelectItem key={option.code} value={option.code}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Separator />
-              <div className="space-y-2">
-                <Label>Default Time Zone</Label>
-                <Select defaultValue="utc-8">
-                  <SelectTrigger className="w-full md:w-64">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="utc-8">Pacific Time (UTC-8)</SelectItem>
-                    <SelectItem value="utc-5">Eastern Time (UTC-5)</SelectItem>
-                    <SelectItem value="utc+0">UTC</SelectItem>
-                    <SelectItem value="utc+1">Central European (UTC+1)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label>{tSettings('companySize')}</Label>
+                    <Select
+                      value={form.companySize}
+                      onValueChange={(value) => {
+                        setForm((prev) => ({
+                          ...prev,
+                          companySize: isCompanySize(value) ? value : prev.companySize,
+                        }))
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={tSettings('companySizePlaceholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COMPANY_SIZE_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-          {/* Danger Zone */}
-          <Card className="border-destructive/50">
-            <CardHeader>
-              <CardTitle className="text-destructive">Danger Zone</CardTitle>
-              <CardDescription>
-                Irreversible actions that affect your account
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                <div>
-                  <p className="font-medium text-foreground">Delete All Data</p>
-                  <p className="text-sm text-muted-foreground">
-                    Permanently delete all your datasets and records
-                  </p>
+                  <div className="space-y-1.5">
+                    <Label>{tSettings('language')}</Label>
+                    <Select
+                      value={form.language}
+                      onValueChange={(value) => {
+                        if (!isLanguageCode(value)) return
+                        setForm((prev) => ({ ...prev, language: value }))
+                        setLanguage(value)
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LANGUAGE_OPTIONS.map((option) => (
+                          <SelectItem key={option.code} value={option.code}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <Button variant="destructive" size="sm">
-                  Delete Data
+
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {tSettings('save')}
                 </Button>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                <div>
-                  <p className="font-medium text-foreground">Delete Account</p>
-                  <p className="text-sm text-muted-foreground">
-                    Permanently delete your account and all associated data
-                  </p>
-                </div>
-                <Button variant="destructive" size="sm">
-                  Delete Account
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </form>
+            )}
+          </CardContent>
+        </Card>
       </main>
     </div>
   )

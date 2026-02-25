@@ -4,7 +4,6 @@ import React from 'react'
 import { PanelLeft } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 
-import { HeaderAuthMenu } from '@/components/auth/HeaderAuthMenu'
 import { Sidebar } from '@/components/dashboard/Sidebar'
 import { cn } from '@/lib/utils'
 
@@ -62,7 +61,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <Sidebar className="fixed inset-y-0 left-0 z-40 hidden w-72 lg:flex" datasetsCount={DATASET_COUNT} />
 
         <div className="flex min-h-screen flex-1 flex-col lg:pl-72">
-          <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur lg:hidden">
+          <header className="sticky top-0 z-30 flex h-14 items-center border-b border-border bg-background/95 px-4 backdrop-blur lg:hidden">
             <button
               type="button"
               aria-label="Open navigation drawer"
@@ -71,7 +70,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             >
               <PanelLeft className="size-4" />
             </button>
-            <HeaderAuthMenu />
           </header>
 
           <main className="flex-1">{children}</main>

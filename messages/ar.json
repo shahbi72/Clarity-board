@@ -1,4 +1,7 @@
 {
+  "common": {
+    "searchDatasets": "ابحث في مجموعات البيانات والسجلات..."
+  },
   "sidebar": {
     "workspace": "مساحة العمل",
     "brand": "Clarityboard",
@@ -6,8 +9,8 @@
     "searchPlaceholder": "ابحث في التقارير ومجموعات البيانات...",
     "sections": {
       "main": "الرئيسية",
-      "aiTools": "ادوات الذكاء الاصطناعي",
-      "features": "الميزات"
+      "aiTools": "أدوات الذكاء الاصطناعي",
+      "features": "المزايا"
     },
     "items": {
       "dashboard": "لوحة التحكم",
@@ -17,28 +20,29 @@
       "aiAssistant": "مساعد الذكاء الاصطناعي",
       "aiSuggestions": "اقتراحات الذكاء الاصطناعي",
       "reports": "التقارير",
-      "pricing": "الاسعار",
+      "pricing": "الأسعار",
       "users": "المستخدمون",
-      "features": "الميزات",
+      "features": "المزايا",
       "products": "المنتجات",
-      "settings": "الاعدادات",
+      "settings": "الإعدادات",
       "help": "المساعدة",
       "privacyPolicy": "سياسة الخصوصية"
     },
     "upgradePlan": "ترقية الخطة",
-    "accountSettings": "اعدادات الحساب"
+    "accountSettings": "إعدادات الحساب"
   },
   "dashboard": {
     "title": "لوحة التحكم",
-    "subtitle": "تابع مجموعة البيانات النشطة واخر النشاطات",
+    "subtitle": "تابع مجموعة البيانات النشطة وآخر النشاطات",
     "unavailableTitle": "لوحة التحكم غير متاحة",
     "loading": "جار تحميل لوحة التحكم...",
-    "retry": "اعادة المحاولة",
-    "noActiveDatasetTitle": "لم يتم اختيار مجموعة بيانات نشطة",
-    "noActiveDatasetDescription": "اختر مجموعة بيانات من صفحة المجموعات او ارفع ملفا للبدء.",
+    "retry": "إعادة المحاولة",
+    "noActiveDatasetTitle": "ارفع بياناتك",
+    "noActiveDatasetDescription": "لا توجد مجموعة بيانات نشطة بعد. ارفع ملفًا لبدء عرض التحليلات.",
     "uploadData": "رفع البيانات",
     "refresh": "تحديث",
-    "recentTransactions": "احدث المعاملات",
+    "activeDatasetFallback": "مجموعة بيانات نشطة",
+    "recentTransactions": "أحدث المعاملات",
     "noTransactions": "لا توجد معاملات بعد.",
     "table": {
       "date": "التاريخ",
@@ -50,12 +54,92 @@
   "auth": {
     "signIn": "تسجيل الدخول",
     "signOut": "تسجيل الخروج",
-    "signUp": "انشاء حساب",
+    "signUp": "إنشاء حساب",
     "demoMode": "وضع العرض",
     "profile": "الملف الشخصي",
     "billing": "الفوترة",
     "language": "اللغة",
-    "notifications": "الاشعارات",
+    "notifications": "الإشعارات",
     "toggleTheme": "تبديل المظهر"
+  },
+  "authCard": {
+    "signInTitle": "سجّل الدخول إلى Clarityboard",
+    "signUpTitle": "أنشئ حسابك في Clarityboard",
+    "signInDescription": "استخدم بياناتك أو تابع باستخدام Google أو GitHub.",
+    "signUpDescription": "ابدأ بالبريد وكلمة المرور أو تابع باستخدام Google أو GitHub.",
+    "fallbackModeEnabled": "متغيرات Supabase غير مضبوطة. تم تفعيل وضع تسجيل الدخول المحلي المؤقت.",
+    "authUnavailable": "خدمة المصادقة غير متاحة. اضبط Supabase Auth للمتابعة.",
+    "oauthUnavailable": "تسجيل الدخول عبر OAuth يتطلب إعداد Supabase.",
+    "verifyEmailNotice": "تم إنشاء الحساب. يرجى التحقق من بريدك الإلكتروني قبل الوصول إلى لوحة التحكم.",
+    "passwordWeak": "يرجى اختيار كلمة مرور أقوى قبل المتابعة.",
+    "continueWithGoogle": "المتابعة باستخدام Google",
+    "continueWithGithub": "المتابعة باستخدام GitHub",
+    "orWithEmail": "أو المتابعة باستخدام البريد الإلكتروني",
+    "emailLabel": "البريد الإلكتروني",
+    "passwordLabel": "كلمة المرور",
+    "passwordPlaceholderSignIn": "أدخل كلمة المرور",
+    "passwordPlaceholderSignUp": "أنشئ كلمة مرور قوية",
+    "passwordRequirement": {
+      "minLength": "8 أحرف على الأقل",
+      "lowercase": "حرف صغير واحد على الأقل",
+      "uppercase": "حرف كبير واحد على الأقل",
+      "numberOrSymbol": "رقم واحد أو رمز واحد على الأقل"
+    },
+    "newUser": "جديد على Clarityboard؟",
+    "existingUser": "هل لديك حساب بالفعل؟",
+    "createAccount": "إنشاء حساب",
+    "termsPrefix": "بالمتابعة فإنك توافق على",
+    "terms": "الشروط",
+    "and": "و",
+    "privacyPolicy": "سياسة الخصوصية"
+  },
+  "verifyEmail": {
+    "title": "تحقق من بريدك الإلكتروني",
+    "description": "يرجى تأكيد بريدك الإلكتروني قبل الوصول إلى لوحة التحكم.",
+    "resend": "إعادة إرسال بريد التحقق",
+    "iVerified": "لقد أكدت بريدي",
+    "backToSignIn": "العودة إلى تسجيل الدخول",
+    "resendSuccess": "تم إرسال بريد التحقق. تحقق من صندوق الوارد.",
+    "resendError": "تعذر إعادة إرسال بريد التحقق الآن.",
+    "resendUnavailable": "خدمة إعادة الإرسال غير متاحة حاليًا.",
+    "missingEmail": "تعذر تحديد البريد الإلكتروني للحساب."
+  },
+  "onboarding": {
+    "title": "أكمل ملفك الشخصي",
+    "description": "نحتاج إلى بعض المعلومات لتخصيص مساحة العمل الخاصة بك.",
+    "loading": "جار تحميل ملفك الشخصي...",
+    "loadError": "تعذر تحميل ملفك الشخصي حاليًا.",
+    "saveError": "تعذر حفظ ملفك الشخصي حاليًا.",
+    "requiredFields": "يرجى إكمال جميع الحقول المطلوبة.",
+    "companySizeRequired": "يرجى اختيار حجم الشركة.",
+    "languageRequired": "يرجى اختيار اللغة.",
+    "firstName": "الاسم الأول",
+    "lastName": "اسم العائلة",
+    "companyName": "اسم الشركة",
+    "companySize": "حجم الشركة",
+    "companySizePlaceholder": "اختر حجم الشركة",
+    "language": "اللغة",
+    "submit": "حفظ ومتابعة"
+  },
+  "settings": {
+    "pageTitle": "الإعدادات",
+    "pageDescription": "إدارة الملف الشخصي والتفضيلات",
+    "profileTitle": "الملف الشخصي",
+    "profileDescription": "حدّث بيانات الحساب وتفضيل اللغة.",
+    "loading": "جار تحميل الإعدادات...",
+    "loadError": "تعذر تحميل الإعدادات.",
+    "saveError": "تعذر حفظ التغييرات.",
+    "saveSuccess": "تم تحديث الإعدادات بنجاح.",
+    "requiredFields": "يرجى إكمال جميع الحقول المطلوبة.",
+    "companySizeRequired": "يرجى اختيار حجم الشركة.",
+    "languageRequired": "يرجى اختيار اللغة.",
+    "firstName": "الاسم الأول",
+    "lastName": "اسم العائلة",
+    "email": "البريد الإلكتروني",
+    "companyName": "اسم الشركة",
+    "companySize": "حجم الشركة",
+    "companySizePlaceholder": "اختر حجم الشركة",
+    "language": "اللغة",
+    "save": "حفظ التغييرات"
   }
 }

@@ -14,6 +14,7 @@ import {
   LANGUAGE_COOKIE_KEY,
   type LanguageCode,
 } from '@/lib/language'
+import { getSupabaseServerClient, isSupabaseAuthConfigured } from '@/lib/supabase/server'
 import './globals.css'
 
 const workSans = Work_Sans({
@@ -83,7 +84,41 @@ function shouldRenderAnalytics(): boolean {
 async function getInitialLanguage(): Promise<LanguageCode> {
   const cookieStore = await cookies()
   const cookieLanguage = cookieStore.get(LANGUAGE_COOKIE_KEY)?.value ?? null
-  return isLanguageCode(cookieLanguage) ? cookieLanguage : DEFAULT_LANGUAGE
+  let language: LanguageCode = isLanguageCode(cookieLanguage) ? cookieLanguage : DEFAULT_LANGUAGE
+
+  if (!isSupabaseAuthConfigured()) {
+    return language
+  }
+
+  try {
+    const supabase = await getSupabaseServerClient()
+    if (!supabase) {
+      return language
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return language
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('language')
+      .eq('user_id', user.id)
+      .maybeSingle<{ language: string | null }>()
+
+    const profileLanguage = profile?.language ?? null
+    if (isLanguageCode(profileLanguage)) {
+      language = profileLanguage
+    }
+  } catch {
+    // Use cookie/default language when profile lookup fails.
+  }
+
+  return language
 }
 
 export default async function RootLayout({
@@ -109,7 +144,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <LanguageProvider>
+          <LanguageProvider initialLanguage={initialLanguage}>
             <DashboardLayout>{children}</DashboardLayout>
             <Toaster />
           </LanguageProvider>

@@ -9,7 +9,6 @@ import trMessages from '@/messages/tr.json'
 import {
   DEFAULT_LANGUAGE,
   getLanguageDirection,
-  isLanguageCode,
   LANGUAGE_COOKIE_KEY,
   LANGUAGE_STORAGE_KEY,
   type LanguageCode,
@@ -46,30 +45,6 @@ function applyDocumentLanguage(language: LanguageCode) {
   document.documentElement.dir = getLanguageDirection(language)
 }
 
-function readStoredLanguage(): LanguageCode | null {
-  try {
-    const value = window.localStorage.getItem(LANGUAGE_STORAGE_KEY)
-    return isLanguageCode(value) ? value : null
-  } catch {
-    return null
-  }
-}
-
-function readLanguageFromDocument(): LanguageCode {
-  if (typeof document === 'undefined') return DEFAULT_LANGUAGE
-  const value = document.documentElement.lang || null
-  return isLanguageCode(value) ? value : DEFAULT_LANGUAGE
-}
-
-function readInitialLanguage(): LanguageCode {
-  const storedLanguage = readStoredLanguage()
-  if (storedLanguage) {
-    return storedLanguage
-  }
-
-  return readLanguageFromDocument()
-}
-
 function persistLanguageCookie(language: LanguageCode) {
   try {
     document.cookie = `${LANGUAGE_COOKIE_KEY}=${language}; path=/; max-age=31536000; samesite=lax`
@@ -88,21 +63,44 @@ function persistLanguage(language: LanguageCode) {
   persistLanguageCookie(language)
 }
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = React.useState<LanguageCode>(DEFAULT_LANGUAGE)
+async function persistLanguageToProfile(language: LanguageCode): Promise<void> {
+  try {
+    await fetch('/api/profile', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ language }),
+    })
+  } catch {
+    // Ignore API/network failures; UI state remains responsive.
+  }
+}
+
+type LanguageProviderProps = {
+  children: React.ReactNode
+  initialLanguage?: LanguageCode
+}
+
+export function LanguageProvider({
+  children,
+  initialLanguage = DEFAULT_LANGUAGE,
+}: LanguageProviderProps) {
+  const [language, setLanguageState] = React.useState<LanguageCode>(initialLanguage)
   const messages = React.useMemo(() => LANGUAGE_MESSAGES[language], [language])
 
   React.useEffect(() => {
-    const initialLanguage = readInitialLanguage()
     setLanguageState(initialLanguage)
-    applyDocumentLanguage(initialLanguage)
-    persistLanguageCookie(initialLanguage)
-  }, [])
+  }, [initialLanguage])
+
+  React.useEffect(() => {
+    applyDocumentLanguage(language)
+    persistLanguage(language)
+  }, [language])
 
   const setLanguage = React.useCallback((nextLanguage: LanguageCode) => {
     setLanguageState(nextLanguage)
-    applyDocumentLanguage(nextLanguage)
-    persistLanguage(nextLanguage)
+    void persistLanguageToProfile(nextLanguage)
   }, [])
 
   const t = React.useCallback(

@@ -3,12 +3,14 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Chrome, Github, Loader2 } from 'lucide-react'
+import { CheckCircle2, Chrome, Circle, Github, Loader2 } from 'lucide-react'
 import { ClarityboardLogo } from '@/components/branding/ClarityboardLogo'
 import {
   createFallbackSessionCookie,
   hasFallbackSessionFromCookieHeader,
+  isFallbackAuthEnabled,
 } from '@/lib/auth/fallback-session'
+import { useI18n } from '@/components/language/language-provider'
 import { getSupabaseBrowserClient, isSupabaseBrowserAuthConfigured } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -23,11 +25,44 @@ type AuthCardProps = {
 
 type OAuthProvider = 'google' | 'github'
 
+const PASSWORD_MIN_LENGTH = 8
+
+type PasswordRequirement = {
+  key: string
+  passed: boolean
+}
+
+function getPasswordRequirements(password: string): PasswordRequirement[] {
+  return [
+    {
+      key: 'minLength',
+      passed: password.length >= PASSWORD_MIN_LENGTH,
+    },
+    {
+      key: 'lowercase',
+      passed: /[a-z]/.test(password),
+    },
+    {
+      key: 'uppercase',
+      passed: /[A-Z]/.test(password),
+    },
+    {
+      key: 'numberOrSymbol',
+      passed: /[0-9\W_]/.test(password),
+    },
+  ]
+}
+
 export function AuthCard({ mode }: AuthCardProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { t } = useI18n()
+  const tAuth = (key: string) => t(`auth.${key}`)
+  const tAuthCard = (key: string) => t(`authCard.${key}`)
   const supabase = React.useMemo(() => getSupabaseBrowserClient(), [])
   const authConfigured = isSupabaseBrowserAuthConfigured()
+  const fallbackEnabled = isFallbackAuthEnabled()
+  const authUnavailable = !authConfigured && !fallbackEnabled
 
   const [email, setEmail] = React.useState('')
   const [password, setPassword] = React.useState('')
@@ -38,6 +73,21 @@ export function AuthCard({ mode }: AuthCardProps) {
 
   const queryNext = searchParams.get('next')
   const nextPath = queryNext && queryNext.startsWith('/') ? queryNext : '/app/dashboard'
+  const isSignIn = mode === 'sign-in'
+
+  const passwordRequirements = React.useMemo(
+    () => getPasswordRequirements(password),
+    [password]
+  )
+  const isPasswordStrong = React.useMemo(
+    () => passwordRequirements.every((requirement) => requirement.passed),
+    [passwordRequirements]
+  )
+  const canSubmit =
+    !isSubmitting &&
+    oauthLoading === null &&
+    !authUnavailable &&
+    (isSignIn || isPasswordStrong)
 
   React.useEffect(() => {
     const queryError = searchParams.get('error')
@@ -48,7 +98,11 @@ export function AuthCard({ mode }: AuthCardProps) {
 
   React.useEffect(() => {
     if (!authConfigured || !supabase) {
-      if (typeof document !== 'undefined' && hasFallbackSessionFromCookieHeader(document.cookie)) {
+      if (
+        fallbackEnabled &&
+        typeof document !== 'undefined' &&
+        hasFallbackSessionFromCookieHeader(document.cookie)
+      ) {
         router.replace(nextPath)
       }
       return
@@ -74,12 +128,22 @@ export function AuthCard({ mode }: AuthCardProps) {
     return () => {
       subscription.unsubscribe()
     }
-  }, [authConfigured, supabase, router, nextPath])
+  }, [authConfigured, fallbackEnabled, supabase, router, nextPath])
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
     setInfo(null)
+
+    if (authUnavailable) {
+      setError(tAuthCard('authUnavailable'))
+      return
+    }
+
+    if (!isSignIn && !isPasswordStrong) {
+      setError(tAuthCard('passwordWeak'))
+      return
+    }
 
     if (!authConfigured || !supabase) {
       if (typeof document !== 'undefined') {
@@ -118,7 +182,7 @@ export function AuthCard({ mode }: AuthCardProps) {
         return
       }
 
-      setInfo('Account created. Check your inbox to confirm your email, then continue to dashboard.')
+      setInfo(tAuthCard('verifyEmailNotice'))
     } catch (authError) {
       setError(authError instanceof Error ? authError.message : 'Authentication failed.')
     } finally {
@@ -130,8 +194,8 @@ export function AuthCard({ mode }: AuthCardProps) {
     setError(null)
     setInfo(null)
 
-    if (!authConfigured || !supabase) {
-      setError('OAuth sign-in requires Supabase auth configuration.')
+    if (!authConfigured || !supabase || authUnavailable) {
+      setError(tAuthCard('oauthUnavailable'))
       return
     }
 
@@ -149,11 +213,10 @@ export function AuthCard({ mode }: AuthCardProps) {
     }
   }
 
-  const isSignIn = mode === 'sign-in'
-  const title = isSignIn ? 'Sign In to Clarityboard' : 'Create your Clarityboard account'
+  const title = isSignIn ? tAuthCard('signInTitle') : tAuthCard('signUpTitle')
   const description = isSignIn
-    ? 'Use your credentials or continue with Google or GitHub.'
-    : 'Start with email/password or continue with Google or GitHub.'
+    ? tAuthCard('signInDescription')
+    : tAuthCard('signUpDescription')
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
@@ -168,7 +231,7 @@ export function AuthCard({ mode }: AuthCardProps) {
         <CardContent className="space-y-4">
           {!authConfigured ? (
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-              Supabase auth env vars are missing. Local fallback auth is active for this deployment.
+              {authUnavailable ? tAuthCard('authUnavailable') : tAuthCard('fallbackModeEnabled')}
             </div>
           ) : null}
 
@@ -189,27 +252,27 @@ export function AuthCard({ mode }: AuthCardProps) {
               type="button"
               variant="outline"
               onClick={() => void handleOAuth('google')}
-              disabled={oauthLoading !== null || isSubmitting}
+              disabled={oauthLoading !== null || isSubmitting || authUnavailable}
             >
               {oauthLoading === 'google' ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Chrome className="mr-2 h-4 w-4" />
               )}
-              Continue with Google
+              {tAuthCard('continueWithGoogle')}
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={() => void handleOAuth('github')}
-              disabled={oauthLoading !== null || isSubmitting}
+              disabled={oauthLoading !== null || isSubmitting || authUnavailable}
             >
               {oauthLoading === 'github' ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Github className="mr-2 h-4 w-4" />
               )}
-              Continue with GitHub
+              {tAuthCard('continueWithGithub')}
             </Button>
           </div>
 
@@ -218,13 +281,13 @@ export function AuthCard({ mode }: AuthCardProps) {
               <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">or continue with email</span>
+              <span className="bg-card px-2 text-muted-foreground">{tAuthCard('orWithEmail')}</span>
             </div>
           </div>
 
           <form className="space-y-3" onSubmit={handleSubmit}>
             <div className="space-y-1.5">
-              <Label htmlFor={`${mode}-email`}>Email</Label>
+              <Label htmlFor={`${mode}-email`}>{tAuthCard('emailLabel')}</Label>
               <Input
                 id={`${mode}-email`}
                 type="email"
@@ -236,42 +299,65 @@ export function AuthCard({ mode }: AuthCardProps) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor={`${mode}-password`}>Password</Label>
+              <Label htmlFor={`${mode}-password`}>{tAuthCard('passwordLabel')}</Label>
               <Input
                 id={`${mode}-password`}
                 type="password"
-                placeholder="Minimum 6 characters"
+                placeholder={
+                  isSignIn
+                    ? tAuthCard('passwordPlaceholderSignIn')
+                    : tAuthCard('passwordPlaceholderSignUp')
+                }
                 autoComplete={isSignIn ? 'current-password' : 'new-password'}
-                minLength={6}
+                minLength={isSignIn ? 1 : PASSWORD_MIN_LENGTH}
                 required
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting || oauthLoading !== null}>
+            {!isSignIn ? (
+              <ul className="space-y-1 rounded-md border border-border/70 bg-muted/25 p-3 text-xs text-muted-foreground">
+                {passwordRequirements.map((requirement) => (
+                  <li key={requirement.key} className="flex items-center gap-2">
+                    {requirement.passed ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                    ) : (
+                      <Circle className="h-3.5 w-3.5" />
+                    )}
+                    <span
+                      className={requirement.passed ? 'font-medium text-foreground' : undefined}
+                    >
+                      {tAuthCard(`passwordRequirement.${requirement.key}`)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            <Button type="submit" className="w-full" disabled={!canSubmit}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isSignIn ? 'Sign In' : 'Sign Up'}
+              {isSignIn ? tAuth('signIn') : tAuth('signUp')}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground">
-            {isSignIn ? 'New to Clarityboard?' : 'Already have an account?'}{' '}
+            {isSignIn ? tAuthCard('newUser') : tAuthCard('existingUser')}{' '}
             <Link
               href={isSignIn ? `/signup${queryNext ? `?next=${encodeURIComponent(queryNext)}` : ''}` : `/login${queryNext ? `?next=${encodeURIComponent(queryNext)}` : ''}`}
               className="font-medium text-primary hover:underline"
             >
-              {isSignIn ? 'Create account' : 'Sign in'}
+              {isSignIn ? tAuthCard('createAccount') : tAuth('signIn')}
             </Link>
           </p>
 
           <p className="text-center text-xs text-muted-foreground">
-            By continuing, you agree to our{' '}
+            {tAuthCard('termsPrefix')}{' '}
             <Link href="/help" className="underline">
-              Terms
+              {tAuthCard('terms')}
             </Link>{' '}
-            and{' '}
+            {tAuthCard('and')}{' '}
             <Link href="/privacy-policy" className="underline">
-              Privacy Policy
+              {tAuthCard('privacyPolicy')}
             </Link>
             .
           </p>

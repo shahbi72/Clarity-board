@@ -48,3 +48,16 @@ model DatasetRow {
   @@unique([datasetId, rowIndex])
   @@index([datasetId, rowIndex])
 }
+
+model Profile {
+  userId      String   @id @map("user_id")
+  firstName   String?  @map("first_name")
+  lastName    String?  @map("last_name")
+  companyName String?  @map("company_name")
+  companySize String?  @map("company_size")
+  language    String   @default("en")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("profiles")
+}

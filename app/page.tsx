@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, BarChart3, Boxes, DollarSign } from 'lucide-react'
 import { ClarityboardLogo } from '@/components/branding/ClarityboardLogo'
-import { LiveBackground } from '@/components/marketing/LiveBackground'
 import { Button } from '@/components/ui/button'
 
 const FEATURES = [
@@ -30,7 +29,6 @@ export default function LandingPage() {
           <ClarityboardLogo
             href="/"
             priority
-            withBackground
             imageClassName="h-8 w-auto md:h-10"
           />
           <div className="flex items-center gap-2">
@@ -45,30 +43,18 @@ export default function LandingPage() {
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
-        <section className="relative mx-auto max-w-4xl overflow-hidden rounded-3xl border border-border/70 bg-card/40 px-6 py-16 text-center shadow-sm md:px-10 md:py-20">
-          <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_20%_10%,rgba(28,59,122,0.96),transparent_58%),radial-gradient(circle_at_80%_30%,rgba(80,130,216,0.38),transparent_56%),linear-gradient(135deg,rgba(7,20,44,0.96)_0%,rgba(9,26,58,0.94)_50%,rgba(8,18,36,0.96)_100%)]" />
-          <LiveBackground className="z-[1]" />
-          <div
-            className="pointer-events-none absolute inset-0 z-[2]"
-            style={{
-              background:
-                'radial-gradient(circle at 50% 42%, rgba(8, 22, 50, 0.14) 0%, rgba(8, 22, 50, 0.1) 36%, rgba(8, 20, 42, 0.28) 72%, rgba(6, 14, 30, 0.44) 100%)',
-            }}
-          />
+        <section className="relative mx-auto max-w-4xl overflow-hidden rounded-3xl border border-border/70 bg-card px-6 py-16 text-center shadow-sm md:px-10 md:py-20">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,color-mix(in_oklch,var(--primary)_20%,transparent),transparent_55%),radial-gradient(circle_at_80%_80%,color-mix(in_oklch,var(--accent)_35%,transparent),transparent_60%),linear-gradient(135deg,color-mix(in_oklch,var(--card)_95%,white),color-mix(in_oklch,var(--card)_88%,var(--primary)_12%))]" />
 
           <div className="relative z-10 mx-auto max-w-3xl">
-            <div className="mb-6 flex justify-center">
-              <ClarityboardLogo
-                href="/"
-                withBackground
-                imageClassName="h-9 w-auto md:h-10"
-              />
-            </div>
-            <h1 className="text-balance text-4xl font-semibold tracking-tight text-slate-50 md:text-5xl">
-              Clarityboard
+            <p className="text-sm font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              AI analytics for modern teams
+            </p>
+            <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
+              Turn raw data into decisions your team can trust.
             </h1>
-            <p className="mt-4 text-balance text-lg text-slate-200">
-              AI-powered business intelligence for decisions, not dashboards.
+            <p className="mt-4 text-balance text-lg text-muted-foreground">
+              Clarityboard cleans, structures, and explains your business data in one focused workspace.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Button asChild size="lg">
@@ -81,7 +67,7 @@ export default function LandingPage() {
                 asChild
                 size="lg"
                 variant="outline"
-                className="border-slate-200/50 bg-slate-900/20 text-slate-100 hover:bg-slate-900/35"
+                className="bg-card/70"
               >
                 <Link href="/pricing">View pricing</Link>
               </Button>
@@ -104,14 +90,7 @@ export default function LandingPage() {
 
       <footer className="border-t border-border/70">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 text-sm text-muted-foreground">
-          <div className="flex items-center">
-            <ClarityboardLogo
-              href="/"
-              withBackground
-              imageClassName="h-7 w-auto md:h-8"
-            />
-            <span>Copyright {new Date().getFullYear()} Clarityboard</span>
-          </div>
+          <span>Copyright {new Date().getFullYear()} All rights reserved.</span>
           <Link href="/privacy-policy" className="hover:text-foreground">
             Privacy Policy
           </Link>

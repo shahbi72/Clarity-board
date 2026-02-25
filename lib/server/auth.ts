@@ -1,5 +1,9 @@
 import { cookies } from 'next/headers'
-import { FALLBACK_AUTH_COOKIE_NAME, hasFallbackSessionValue } from '@/lib/auth/fallback-session'
+import {
+  FALLBACK_AUTH_COOKIE_NAME,
+  hasFallbackSessionValue,
+  isFallbackAuthEnabled,
+} from '@/lib/auth/fallback-session'
 import { prisma } from '@/lib/server/prisma'
 import { HttpError } from '@/lib/server/http-error'
 import { getSupabaseServerClient, isSupabaseAuthConfigured } from '@/lib/supabase/server'
@@ -11,6 +15,10 @@ const POSTGRES_DATABASE_URL_HELP =
 
 export async function getCurrentUserId(): Promise<string> {
   if (!isSupabaseAuthConfigured()) {
+    if (!isFallbackAuthEnabled()) {
+      throw new HttpError(500, 'Supabase auth configuration is required.')
+    }
+
     const cookieStore = await cookies()
     const hasFallbackSession = hasFallbackSessionValue(
       cookieStore.get(FALLBACK_AUTH_COOKIE_NAME)?.value
