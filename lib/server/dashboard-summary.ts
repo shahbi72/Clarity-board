@@ -15,6 +15,8 @@ const AMOUNT_TYPE_KEYWORDS = {
   revenue: ['revenue', 'income', 'sale', 'sales', 'credit', 'deposit'],
 }
 
+const RECENT_TRANSACTIONS_LIMIT = 120
+
 const COLUMN_ALIASES = {
   date: ['date', 'created_at', 'transaction_date', 'createdat', 'transactiondate'],
   amount: ['amount', 'total', 'value'],
@@ -176,7 +178,7 @@ export async function getDashboardSummaryForUser(
       if (bHasDate) return 1
       return b.rowIndex - a.rowIndex
     })
-    .slice(0, 10)
+    .slice(0, RECENT_TRANSACTIONS_LIMIT)
 
   const previewRows = rows
     .slice(0, 10)

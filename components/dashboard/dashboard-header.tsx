@@ -1,5 +1,6 @@
 'use client'
 
+import type { ChangeEvent } from 'react'
 import { Bell, Search, Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
@@ -10,13 +11,30 @@ import { useI18n } from '@/components/language/language-provider'
 interface DashboardHeaderProps {
   title: string
   description?: string
+  searchPlaceholder?: string
+  searchValue?: string
+  onSearchChange?: (value: string) => void
 }
 
-export function DashboardHeader({ title, description }: DashboardHeaderProps) {
+export function DashboardHeader({
+  title,
+  description,
+  searchPlaceholder,
+  searchValue,
+  onSearchChange,
+}: DashboardHeaderProps) {
   const { t } = useI18n()
   const tAuth = (key: string) => t(`auth.${key}`)
   const tCommon = (key: string) => t(`common.${key}`)
   const { setTheme, resolvedTheme } = useTheme()
+  const resolvedSearchPlaceholder = searchPlaceholder ?? tCommon('searchDatasets')
+  const searchInputProps = onSearchChange
+    ? {
+        value: searchValue ?? '',
+        onChange: (event: ChangeEvent<HTMLInputElement>) =>
+          onSearchChange(event.target.value),
+      }
+    : {}
 
   return (
     <header className="flex min-h-16 items-center justify-between border-b border-border/70 bg-background/80 px-4 py-3 backdrop-blur md:px-6">
@@ -33,8 +51,9 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground rtl:left-auto rtl:right-3" />
           <Input
-            placeholder={tCommon('searchDatasets')}
+            placeholder={resolvedSearchPlaceholder}
             className="w-64 pl-9 rtl:pl-3 rtl:pr-9"
+            {...searchInputProps}
           />
         </div>
 
