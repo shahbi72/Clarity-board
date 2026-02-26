@@ -4,7 +4,7 @@ import { PublicHeader } from '@/components/marketing/PublicHeader'
 export const metadata: Metadata = {
   title: 'Contact Support | Clarityboard',
   description:
-    'Contact Clarityboard support for subscription, billing, privacy, or technical questions.',
+    'Contact Clarityboard support for subscription, billing, privacy, or technical questions for its SaaS analytics and AI platform.',
 }
 
 export default function ContactPage() {
@@ -16,6 +16,10 @@ export default function ContactPage() {
         <section>
           <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Support</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">Contact Clarityboard</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Clarityboard is a subscription-based SaaS platform for dashboards, analytics, and
+            AI-powered business insights.
+          </p>
           <p className="mt-2 text-sm text-muted-foreground">
             If you need help with account setup, billing, data privacy, or feature questions, our
             support team is available by email.

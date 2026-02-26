@@ -4,7 +4,7 @@ import { PublicHeader } from '@/components/marketing/PublicHeader'
 export const metadata: Metadata = {
   title: 'Terms of Service | Clarityboard',
   description:
-    'Read Clarityboard terms for SaaS analytics and AI insights subscriptions, including acceptable use, service limits, and refund terms.',
+    'Read Clarityboard terms for its subscription-based SaaS analytics and AI insights platform, including acceptable use, service limits, and refund terms.',
 }
 
 function Section({
@@ -34,8 +34,8 @@ export default function TermsPage() {
           <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Legal</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">Terms of Service</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Effective February 26, 2026. These terms govern access to Clarityboard, a subscription
-            SaaS platform for analytics dashboards and AI-driven business insights.
+            Effective February 26, 2026. Clarityboard is a subscription-based SaaS platform for
+            dashboards, analytics, and AI-powered business insights.
           </p>
         </section>
 
@@ -60,11 +60,15 @@ export default function TermsPage() {
         </Section>
 
         <Section id="refund-policy" title="Refund Policy">
-          <p>
-            Clarityboard offers a 14-day refund window for first-time purchases. Refunds are not
-            provided for renewal charges after the initial period. For billing disputes or
-            exceptional circumstances, contact support at clarityboard.app@gmail.com.
-          </p>
+          <ul className="list-disc space-y-2 pl-5">
+            <li>Refunds are available only for first-time subscription purchases.</li>
+            <li>Refund requests must be submitted within 7 days of the initial charge.</li>
+            <li>No refunds are provided for renewals or subsequent billing cycles.</li>
+            <li>
+              Refunds may be denied in cases of misuse, abuse, or excessive data export activity.
+            </li>
+          </ul>
+          <p>For refund requests or billing disputes, contact clarityboard.app@gmail.com.</p>
         </Section>
 
         <Section title="Acceptable Use">

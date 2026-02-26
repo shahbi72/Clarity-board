@@ -8,7 +8,7 @@ import { getCurrentUserId } from '@/lib/server/auth'
 export const metadata: Metadata = {
   title: 'Pricing | Clarityboard',
   description:
-    'Compare Clarityboard Starter, Pro, and Business plans for SaaS analytics and AI insights subscriptions.',
+    'Compare Clarityboard Starter, Pro, and Business plans for its subscription-based SaaS analytics and AI insights platform.',
 }
 
 export default async function PricingPage() {
@@ -28,8 +28,11 @@ export default async function PricingPage() {
         <section className="mx-auto max-w-2xl text-center">
           <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Pricing</h1>
           <p className="mt-3 text-muted-foreground">
-            Clarityboard sells subscription access to analytics dashboards and AI-generated business
-            insights. Choose the plan that fits your reporting and decision workflow.
+            Clarityboard is a subscription-based SaaS platform for dashboards, analytics, and
+            AI-powered business insights.
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Choose the plan that fits your reporting and decision workflow.
           </p>
           <div className="mt-6">
             <Button asChild size="lg">

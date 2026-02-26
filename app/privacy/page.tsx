@@ -4,7 +4,7 @@ import { PublicHeader } from '@/components/marketing/PublicHeader'
 export const metadata: Metadata = {
   title: 'Privacy Policy | Clarityboard',
   description:
-    'Understand what data Clarityboard collects, how cookies and analytics are used, and how to request account or data deletion.',
+    'Understand what data Clarityboard collects, how cookies and analytics are used, and how to request account or data deletion for its SaaS analytics platform.',
 }
 
 function Section({
@@ -32,8 +32,8 @@ export default function PrivacyPage() {
           <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Legal</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">Privacy Policy</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Effective February 26, 2026. This policy explains how Clarityboard collects and uses
-            data when you use our analytics and AI subscription service.
+            Effective February 26, 2026. Clarityboard is a subscription-based SaaS platform for
+            dashboards, analytics, and AI-powered business insights.
           </p>
         </section>
 
