@@ -177,6 +177,15 @@ export function AuthCard({ mode }: AuthCardProps) {
       if (signUpError) throw signUpError
 
       if (data.session?.user) {
+        try {
+          await fetch('/api/profile/initialize', {
+            method: 'POST',
+            cache: 'no-store',
+          })
+        } catch {
+          // Profile initialization will be retried via auth callback or onboarding flows.
+        }
+
         router.replace(nextPath)
         router.refresh()
         return

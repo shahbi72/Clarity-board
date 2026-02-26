@@ -48,6 +48,26 @@ async function requireAuthenticatedUser(supabase: SupabaseClient): Promise<User>
   return user
 }
 
+export async function ensureProfileInitializedForCurrentUser(): Promise<void> {
+  const supabase = await requireSupabaseClient()
+  const user = await requireAuthenticatedUser(supabase)
+
+  const { error } = await supabase.from('profiles').upsert(
+    {
+      user_id: user.id,
+      role: 'user',
+    },
+    {
+      onConflict: 'user_id',
+      ignoreDuplicates: true,
+    }
+  )
+
+  if (error) {
+    throw new HttpError(500, error.message)
+  }
+}
+
 async function readProfileRow(
   supabase: SupabaseClient,
   userId: string

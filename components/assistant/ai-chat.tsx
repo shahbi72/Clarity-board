@@ -5,7 +5,6 @@ import { Send, Sparkles, User, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { mockChatMessages, suggestedQuestions, type ChatMessage } from '@/lib/mock-data'
 
@@ -222,7 +221,7 @@ export function AIChat() {
   }
 
   return (
-    <Card className="flex h-[600px] flex-col">
+    <Card className="flex h-[600px] max-w-full flex-col overflow-hidden">
       <CardHeader className="border-b border-border">
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" />
@@ -230,12 +229,14 @@ export function AIChat() {
         </CardTitle>
       </CardHeader>
 
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        <div className="space-y-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
+        <div className="max-w-full space-y-4 overflow-hidden">
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
+              className={`flex max-w-full gap-3 overflow-hidden ${
+                message.role === 'user' ? 'flex-row-reverse' : ''
+              }`}
             >
               <Avatar className="h-8 w-8 shrink-0">
                 <AvatarFallback
@@ -253,13 +254,15 @@ export function AIChat() {
                 </AvatarFallback>
               </Avatar>
               <div
-                className={`max-w-[80%] rounded-lg px-4 py-3 ${
+                className={`max-w-[75%] overflow-hidden rounded-lg px-4 py-3 ${
                   message.role === 'user'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-foreground'
                 }`}
               >
-                <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                <div className="max-w-none break-words whitespace-pre-wrap text-sm">
+                  {message.content}
+                </div>
                 <p
                   className={`mt-1 text-xs ${
                     message.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
@@ -287,7 +290,7 @@ export function AIChat() {
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Suggested Questions */}
       <div className="border-t border-border px-4 py-3">

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ensureProfileInitializedForCurrentUser } from '@/lib/server/profile'
 import { getSupabaseServerClient, isSupabaseAuthConfigured } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
@@ -24,6 +25,12 @@ export async function GET(request: NextRequest) {
     const signInUrl = new URL('/login', request.url)
     signInUrl.searchParams.set('error', error.message)
     return NextResponse.redirect(signInUrl)
+  }
+
+  try {
+    await ensureProfileInitializedForCurrentUser()
+  } catch {
+    // Do not block successful auth if profile initialization temporarily fails.
   }
 
   return NextResponse.redirect(dashboardUrl)

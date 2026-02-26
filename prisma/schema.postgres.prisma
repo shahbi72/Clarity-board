@@ -55,6 +55,7 @@ model Profile {
   lastName    String?  @map("last_name")
   companyName String?  @map("company_name")
   companySize String?  @map("company_size")
+  role        String   @default("user")
   language    String   @default("en")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
