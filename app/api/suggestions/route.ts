@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server'
 import { getCurrentUserId } from '@/lib/server/auth'
 import { isDatabaseConnectivityError } from '@/lib/server/database-errors'
 import { getErrorMessage, HttpError } from '@/lib/server/http-error'
+import { requireActiveSubscriptionForUser } from '@/lib/server/subscriptions'
 import { getSuggestionsForUser } from '@/lib/server/suggestions'
 import type { SuggestionsApiResponse, SuggestionsPayload } from '@/lib/types/data-pipeline'
 
 export async function GET() {
   try {
     const userId = await getCurrentUserId()
+    await requireActiveSubscriptionForUser(userId)
     const suggestions = await getSuggestionsForUser(userId)
 
     if (!suggestions.dataset) {

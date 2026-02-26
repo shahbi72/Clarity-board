@@ -1,5 +1,4 @@
-'use client'
-
+import { redirect } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { AIChat } from '@/components/assistant/ai-chat'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,6 +10,7 @@ import {
   DollarSign,
   Zap,
 } from 'lucide-react'
+import { getCurrentUserSubscription, isActiveSubscriptionStatus } from '@/lib/server/subscriptions'
 
 const capabilities = [
   {
@@ -35,7 +35,12 @@ const capabilities = [
   },
 ]
 
-export default function AssistantPage() {
+export default async function AssistantPage() {
+  const subscription = await getCurrentUserSubscription()
+  if (!isActiveSubscriptionStatus(subscription?.status)) {
+    redirect('/billing')
+  }
+
   return (
     <div className="min-h-full">
       <DashboardHeader

@@ -62,3 +62,17 @@ model Profile {
 
   @@map("profiles")
 }
+
+model Subscription {
+  userId               String    @id @map("user_id")
+  paddleCustomerId     String?   @map("paddle_customer_id")
+  paddleSubscriptionId String?   @map("paddle_subscription_id")
+  status               String
+  planPriceId          String?   @map("plan_price_id")
+  currentPeriodEnd     DateTime? @map("current_period_end")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  @@index([paddleCustomerId])
+  @@index([paddleSubscriptionId])
+  @@map("subscriptions")
+}
