@@ -9,6 +9,9 @@ export type PaddleCheckoutOpenOptions = {
     priceId: string
     quantity: number
   }>
+  customer?: {
+    email?: string
+  }
   customData?: Record<string, unknown>
 }
 

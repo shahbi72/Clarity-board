@@ -4,6 +4,7 @@ import {
   findSubscriptionByPaddleIdentifiers,
   mapPaddleTransactionStatus,
   parsePaddleDate,
+  resolvePlanForTransaction,
   upsertSubscriptionForUser,
 } from '@/lib/server/subscriptions'
 
@@ -18,11 +19,18 @@ type PaddleTransactionData = {
   status?: string | null
   customer_id?: string | null
   subscription_id?: string | null
+  customer?: {
+    id?: string | null
+  } | null
+  subscription?: {
+    id?: string | null
+  } | null
   custom_data?: Record<string, unknown> | null
   billing_period?: {
     ends_at?: string | null
   } | null
   items?: Array<{
+    price_id?: string | null
     price?: {
       id?: string | null
     } | null
@@ -137,13 +145,27 @@ function extractUserId(customData: Record<string, unknown> | null | undefined): 
   return normalized.length > 0 ? normalized : null
 }
 
+function extractPlan(customData: Record<string, unknown> | null | undefined): string | null {
+  if (!customData) {
+    return null
+  }
+
+  const rawPlan = customData.plan
+  if (typeof rawPlan !== 'string') {
+    return null
+  }
+
+  const normalized = rawPlan.trim().toLowerCase()
+  return normalized.length > 0 ? normalized : null
+}
+
 function extractPlanPriceId(items: PaddleTransactionData['items']): string | null {
   if (!items || items.length === 0) {
     return null
   }
 
   for (const item of items) {
-    const candidate = item.price?.id
+    const candidate = item.price?.id ?? item.price_id
     if (typeof candidate === 'string' && candidate.trim().length > 0) {
       return candidate.trim()
     }
@@ -152,54 +174,103 @@ function extractPlanPriceId(items: PaddleTransactionData['items']): string | nul
   return null
 }
 
-async function resolveUserIdFromTransaction(
-  transaction: PaddleTransactionData
-): Promise<string | null> {
-  const userIdFromCustomData = extractUserId(transaction.custom_data)
-  if (userIdFromCustomData) {
-    return userIdFromCustomData
+function extractCustomerId(transaction: PaddleTransactionData): string | null {
+  const directId = transaction.customer_id
+  if (typeof directId === 'string' && directId.trim().length > 0) {
+    return directId.trim()
   }
 
+  const nestedId = transaction.customer?.id
+  if (typeof nestedId === 'string' && nestedId.trim().length > 0) {
+    return nestedId.trim()
+  }
+
+  return null
+}
+
+function extractSubscriptionId(transaction: PaddleTransactionData): string | null {
+  const directId = transaction.subscription_id
+  if (typeof directId === 'string' && directId.trim().length > 0) {
+    return directId.trim()
+  }
+
+  const nestedId = transaction.subscription?.id
+  if (typeof nestedId === 'string' && nestedId.trim().length > 0) {
+    return nestedId.trim()
+  }
+
+  return null
+}
+
+async function resolveTransactionContext(transaction: PaddleTransactionData) {
+  const customData = transaction.custom_data ?? null
+  const paddleCustomerId = extractCustomerId(transaction)
+  const paddleSubscriptionId = extractSubscriptionId(transaction)
+
   const existingSubscription = await findSubscriptionByPaddleIdentifiers({
-    paddleCustomerId: transaction.customer_id ?? null,
-    paddleSubscriptionId: transaction.subscription_id ?? null,
+    paddleCustomerId,
+    paddleSubscriptionId,
   })
 
-  return existingSubscription?.userId ?? null
+  const userId = extractUserId(customData) ?? existingSubscription?.userId ?? null
+  const planPriceId = extractPlanPriceId(transaction.items) ?? existingSubscription?.planPriceId ?? null
+  const plan = resolvePlanForTransaction({
+    explicitPlan: extractPlan(customData),
+    planPriceId,
+    existingSubscription,
+  })
+
+  return {
+    userId,
+    plan,
+    planPriceId,
+    existingSubscription,
+    paddleCustomerId,
+    paddleSubscriptionId,
+  }
 }
 
 async function handleTransactionCompleted(transaction: PaddleTransactionData) {
-  const userId = await resolveUserIdFromTransaction(transaction)
-  if (!userId) {
+  const context = await resolveTransactionContext(transaction)
+  if (!context.userId || !context.plan) {
     return
   }
 
   await upsertSubscriptionForUser({
-    userId,
+    userId: context.userId,
+    plan: context.plan,
     status: 'active',
-    paddleCustomerId: transaction.customer_id ?? null,
-    paddleSubscriptionId: transaction.subscription_id ?? null,
-    planPriceId: extractPlanPriceId(transaction.items),
-    currentPeriodEnd: parsePaddleDate(transaction.billing_period?.ends_at),
+    planPriceId: context.planPriceId,
+    paddleCustomerId: context.paddleCustomerId ?? context.existingSubscription?.paddleCustomerId ?? null,
+    paddleSubscriptionId:
+      context.paddleSubscriptionId ?? context.existingSubscription?.paddleSubscriptionId ?? null,
+    currentPeriodEnd:
+      parsePaddleDate(transaction.billing_period?.ends_at) ??
+      context.existingSubscription?.currentPeriodEnd ??
+      null,
   })
 }
 
 async function handleTransactionUpdated(transaction: PaddleTransactionData) {
-  const userId = await resolveUserIdFromTransaction(transaction)
-  if (!userId) {
+  const context = await resolveTransactionContext(transaction)
+  if (!context.userId || !context.plan) {
     return
   }
 
+  const hasBillingPeriodEnd = transaction.billing_period?.ends_at !== undefined
+  const currentPeriodEnd = hasBillingPeriodEnd
+    ? parsePaddleDate(transaction.billing_period?.ends_at)
+    : context.existingSubscription?.currentPeriodEnd ?? null
+
   await upsertSubscriptionForUser({
-    userId,
+    userId: context.userId,
+    plan: context.plan,
     status: mapPaddleTransactionStatus(transaction.status),
-    paddleCustomerId: transaction.customer_id ?? undefined,
-    paddleSubscriptionId: transaction.subscription_id ?? undefined,
-    planPriceId: extractPlanPriceId(transaction.items) ?? undefined,
-    currentPeriodEnd:
-      transaction.billing_period?.ends_at !== undefined
-        ? parsePaddleDate(transaction.billing_period?.ends_at)
-        : undefined,
+    planPriceId: context.planPriceId,
+    paddleCustomerId: context.paddleCustomerId ?? context.existingSubscription?.paddleCustomerId ?? null,
+    paddleSubscriptionId:
+      context.paddleSubscriptionId ?? context.existingSubscription?.paddleSubscriptionId ?? null,
+    currentPeriodEnd,
   })
 }
 

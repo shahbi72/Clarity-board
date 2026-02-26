@@ -65,6 +65,7 @@ model Profile {
 
 model Subscription {
   userId               String    @id @map("user_id")
+  plan                 String
   paddleCustomerId     String?   @map("paddle_customer_id")
   paddleSubscriptionId String?   @map("paddle_subscription_id")
   status               String
@@ -75,4 +76,16 @@ model Subscription {
   @@index([paddleCustomerId])
   @@index([paddleSubscriptionId])
   @@map("subscriptions")
+}
+
+model AiInsightUsage {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  monthKey  String   @map("month_key")
+  usedCount Int      @default(0) @map("used_count")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, monthKey])
+  @@index([userId])
+  @@map("ai_insight_usage")
 }

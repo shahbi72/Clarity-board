@@ -31,7 +31,9 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://clarity-board-ui-build.vercel.app'
+    process.env.NEXT_PUBLIC_APP_URL ??
+      process.env.NEXT_PUBLIC_SITE_URL ??
+      'https://clarity-board-ui-build.vercel.app'
   ),
   title: 'ClarityBoard - Transform Messy Data into Business Insights',
   description:

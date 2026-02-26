@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server'
 import { getCurrentUserId } from '@/lib/server/auth'
 import { isDatabaseConnectivityError } from '@/lib/server/database-errors'
 import { getErrorMessage, HttpError } from '@/lib/server/http-error'
-import { requireActiveSubscriptionForUser } from '@/lib/server/subscriptions'
+import { consumeAiInsightAllowanceForUser } from '@/lib/server/subscriptions'
 import { getSuggestionsForUser } from '@/lib/server/suggestions'
 import type { SuggestionsApiResponse, SuggestionsPayload } from '@/lib/types/data-pipeline'
 
 export async function GET() {
   try {
     const userId = await getCurrentUserId()
-    await requireActiveSubscriptionForUser(userId)
+    const access = await consumeAiInsightAllowanceForUser(userId)
     const suggestions = await getSuggestionsForUser(userId)
 
     if (!suggestions.dataset) {
@@ -21,9 +21,25 @@ export async function GET() {
     }
 
     const { dataset, ...payload } = suggestions
+
+    const payloadForPlan: SuggestionsPayload =
+      access.plan === 'basic'
+        ? {
+            ...(payload as SuggestionsPayload),
+            trends: {
+              timeseries: [],
+              momGrowthPct: null,
+            },
+            recommendations: [
+              ...(payload as SuggestionsPayload).recommendations,
+              'Upgrade to Pro to unlock forecasting and export capabilities.',
+            ],
+          }
+        : (payload as SuggestionsPayload)
+
     const response: SuggestionsApiResponse = {
       datasetMeta: dataset,
-      suggestionsPayload: payload as SuggestionsPayload,
+      suggestionsPayload: payloadForPlan,
     }
 
     return NextResponse.json(response)

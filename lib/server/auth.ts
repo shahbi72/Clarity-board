@@ -14,7 +14,12 @@ export const DEMO_USER_ID = process.env.DEMO_USER_ID?.trim() || 'demo-user'
 const POSTGRES_DATABASE_URL_HELP =
   'Database configuration error. Set DATABASE_URL to your Supabase Postgres connection string (pooler 6543 + sslmode=require).'
 
-export async function getCurrentUserId(): Promise<string> {
+export type CurrentUserIdentity = {
+  id: string
+  email: string | null
+}
+
+export async function getCurrentUserIdentity(): Promise<CurrentUserIdentity> {
   if (!isSupabaseAuthConfigured()) {
     if (!isFallbackAuthEnabled()) {
       throw new HttpError(500, 'Supabase auth configuration is required.')
@@ -29,7 +34,10 @@ export async function getCurrentUserId(): Promise<string> {
       throw new HttpError(401, 'Authentication required.')
     }
 
-    return DEMO_USER_ID
+    return {
+      id: DEMO_USER_ID,
+      email: 'demo@clarityboard.app',
+    }
   }
 
   const supabase = await getSupabaseServerClient()
@@ -42,7 +50,15 @@ export async function getCurrentUserId(): Promise<string> {
     throw new HttpError(401, 'Authentication required.')
   }
 
-  return data.user.id
+  return {
+    id: data.user.id,
+    email: data.user.email ?? null,
+  }
+}
+
+export async function getCurrentUserId(): Promise<string> {
+  const identity = await getCurrentUserIdentity()
+  return identity.id
 }
 
 export async function ensureCurrentUser(userId: string) {

@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/server/prisma'
 import { HttpError } from '@/lib/server/http-error'
 import { ensureCurrentUser } from '@/lib/server/auth'
+import { getDatasetLimitForUser } from '@/lib/server/subscriptions'
 import type {
   ActiveDatasetMetadata,
   DataRow,
@@ -21,6 +22,20 @@ type CreateDatasetInput = {
 
 export async function createDatasetForUser(input: CreateDatasetInput) {
   await ensureCurrentUser(input.userId)
+
+  const datasetLimit = await getDatasetLimitForUser(input.userId)
+  if (typeof datasetLimit === 'number') {
+    const existingCount = await prisma.dataset.count({
+      where: { userId: input.userId },
+    })
+
+    if (existingCount >= datasetLimit) {
+      throw new HttpError(
+        402,
+        `Dataset limit reached for your current plan (${datasetLimit}). Upgrade to continue uploading datasets.`
+      )
+    }
+  }
 
   const dataset = await prisma.dataset.create({
     data: {

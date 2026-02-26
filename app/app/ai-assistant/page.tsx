@@ -10,7 +10,8 @@ import {
   DollarSign,
   Zap,
 } from 'lucide-react'
-import { getCurrentUserSubscription, isActiveSubscriptionStatus } from '@/lib/server/subscriptions'
+import { getCurrentUserId } from '@/lib/server/auth'
+import { requireBasicPlanForUser } from '@/lib/server/subscriptions'
 
 const capabilities = [
   {
@@ -36,9 +37,11 @@ const capabilities = [
 ]
 
 export default async function AssistantPage() {
-  const subscription = await getCurrentUserSubscription()
-  if (!isActiveSubscriptionStatus(subscription?.status)) {
-    redirect('/billing')
+  try {
+    const userId = await getCurrentUserId()
+    await requireBasicPlanForUser(userId)
+  } catch {
+    redirect('/pricing?upgrade=basic')
   }
 
   return (

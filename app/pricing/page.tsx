@@ -3,21 +3,25 @@ import Link from 'next/link'
 import { PricingPlans } from '@/components/billing/pricing-plans'
 import { PublicHeader } from '@/components/marketing/PublicHeader'
 import { Button } from '@/components/ui/button'
-import { getCurrentUserId } from '@/lib/server/auth'
+import { getCurrentUserIdentity } from '@/lib/server/auth'
 
 export const metadata: Metadata = {
   title: 'Pricing | Clarityboard',
   description:
-    'Compare Clarityboard Starter, Pro, and Business plans for its subscription-based SaaS analytics and AI insights platform.',
+    'Compare Clarityboard Free, Basic, Pro, and Business plans for its subscription-based SaaS analytics and AI insights platform.',
 }
 
 export default async function PricingPage() {
   let userId: string | null = null
+  let userEmail: string | null = null
 
   try {
-    userId = await getCurrentUserId()
+    const identity = await getCurrentUserIdentity()
+    userId = identity.id
+    userEmail = identity.email
   } catch {
     userId = null
+    userEmail = null
   }
 
   return (
@@ -41,7 +45,7 @@ export default async function PricingPage() {
           </div>
         </section>
 
-        <PricingPlans userId={userId} />
+        <PricingPlans userId={userId} userEmail={userEmail} />
       </main>
     </div>
   )

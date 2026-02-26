@@ -1,7 +1,17 @@
+import { redirect } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { getCurrentUserId } from '@/lib/server/auth'
+import { requireBusinessPlanForUser } from '@/lib/server/subscriptions'
 
-export default function UsersPage() {
+export default async function UsersPage() {
+  try {
+    const userId = await getCurrentUserId()
+    await requireBusinessPlanForUser(userId)
+  } catch {
+    redirect('/pricing?upgrade=business')
+  }
+
   return (
     <div className="min-h-full">
       <DashboardHeader title="Users" description="Manage user access and workspace roles" />
