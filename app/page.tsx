@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, BarChart3, Boxes, DollarSign } from 'lucide-react'
-import { ClarityboardLogo } from '@/components/branding/ClarityboardLogo'
+import { PublicHeader } from '@/components/marketing/PublicHeader'
 import { Button } from '@/components/ui/button'
 
 const FEATURES = [
@@ -24,23 +24,7 @@ const FEATURES = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border/70">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
-          <ClarityboardLogo
-            href="/"
-            priority
-            imageClassName="h-8 w-auto md:h-10"
-          />
-          <div className="flex items-center gap-2">
-            <Button asChild variant="ghost">
-              <Link href="/login">Sign in</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/signup">Start free</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <PublicHeader />
 
       <main className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
         <section className="relative mx-auto max-w-4xl overflow-hidden rounded-3xl border border-border/70 bg-card px-6 py-16 text-center shadow-sm md:px-10 md:py-20">
@@ -88,14 +72,6 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-border/70">
-        <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 text-sm text-muted-foreground">
-          <span>Copyright {new Date().getFullYear()} All rights reserved.</span>
-          <Link href="/privacy-policy" className="hover:text-foreground">
-            Privacy Policy
-          </Link>
-        </div>
-      </footer>
     </div>
   )
 }

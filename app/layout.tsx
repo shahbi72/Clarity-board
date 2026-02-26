@@ -5,6 +5,7 @@ import { IBM_Plex_Mono, Work_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout'
+import { PublicFooter } from '@/components/marketing/PublicFooter'
 import { LanguageProvider } from '@/components/language/language-provider'
 import { Toaster } from '@/components/ui/toaster'
 import {
@@ -146,6 +147,7 @@ export default async function RootLayout({
         >
           <LanguageProvider initialLanguage={initialLanguage}>
             <DashboardLayout>{children}</DashboardLayout>
+            <PublicFooter />
             <Toaster />
           </LanguageProvider>
         </ThemeProvider>

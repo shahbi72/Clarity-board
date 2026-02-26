@@ -21,8 +21,8 @@ function formatPlanName(planPriceId: string | null): string {
 
   const planEntries: Array<[string, string]> = [
     [process.env.NEXT_PUBLIC_PADDLE_PRICE_STARTER_ID?.trim() ?? '', 'Starter'],
-    [process.env.NEXT_PUBLIC_PADDLE_PRICE_GROWTH_ID?.trim() ?? '', 'Growth'],
-    [process.env.NEXT_PUBLIC_PADDLE_PRICE_SCALE_ID?.trim() ?? '', 'Scale'],
+    [process.env.NEXT_PUBLIC_PADDLE_PRICE_GROWTH_ID?.trim() ?? '', 'Pro'],
+    [process.env.NEXT_PUBLIC_PADDLE_PRICE_SCALE_ID?.trim() ?? '', 'Business'],
   ]
 
   const planMap = new Map<string, string>(

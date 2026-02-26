@@ -25,21 +25,21 @@ function getPlans(): PricingPlan[] {
       priceLabel: '$19',
       priceId: process.env.NEXT_PUBLIC_PADDLE_PRICE_STARTER_ID?.trim() ?? '',
       description: 'For solo operators and small teams getting started.',
-      features: ['3 datasets', 'Dashboard analytics', 'Email support'],
+      features: ['3 connected datasets', 'Core dashboard analytics', 'Email support'],
     },
     {
-      name: 'Growth',
+      name: 'Pro',
       priceLabel: '$49',
       priceId: process.env.NEXT_PUBLIC_PADDLE_PRICE_GROWTH_ID?.trim() ?? '',
-      description: 'For teams running ongoing data workflows.',
-      features: ['Unlimited datasets', 'AI assistant access', 'Priority support'],
+      description: 'For teams running recurring reporting and forecasting workflows.',
+      features: ['Unlimited datasets', 'AI insights assistant', 'Priority email support'],
     },
     {
-      name: 'Scale',
+      name: 'Business',
       priceLabel: '$99',
       priceId: process.env.NEXT_PUBLIC_PADDLE_PRICE_SCALE_ID?.trim() ?? '',
-      description: 'For high-volume teams with advanced reporting needs.',
-      features: ['Advanced automations', 'Premium AI usage', 'Dedicated onboarding'],
+      description: 'For operations that need scale, controls, and higher-volume usage.',
+      features: ['Advanced automations', 'Higher AI usage limits', 'Dedicated onboarding'],
     },
   ]
 }
