@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getCurrentUserId } from '@/lib/server/auth'
+import { isDatabaseConnectivityError } from '@/lib/server/database-errors'
 import { getDatasetsForUser } from '@/lib/server/datasets'
 import { getErrorMessage, HttpError } from '@/lib/server/http-error'
 import type { DatasetsResponse } from '@/lib/types/data-pipeline'
@@ -11,6 +12,14 @@ export async function GET() {
     const response: DatasetsResponse = result
     return NextResponse.json(response)
   } catch (error) {
+    if (isDatabaseConnectivityError(error)) {
+      const response: DatasetsResponse = {
+        datasets: [],
+        activeDatasetId: null,
+      }
+      return NextResponse.json(response)
+    }
+
     const status = error instanceof HttpError ? error.status : 500
     return NextResponse.json(
       { error: getErrorMessage(error) },

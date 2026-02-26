@@ -97,9 +97,11 @@ function parseTransactionDate(value: string | null): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
-function parseMonthLabelDate(label: string): Date | null {
-  const parsed = new Date(`${label} 1`)
-  return Number.isNaN(parsed.getTime()) ? null : parsed
+function toQueryDate(value: Date): string {
+  const year = value.getFullYear()
+  const month = String(value.getMonth() + 1).padStart(2, '0')
+  const day = String(value.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 function formatCurrency(value: number): string {
@@ -128,6 +130,23 @@ function aggregateCategoryTotals(
   return Array.from(categoryMap.entries())
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value)
+}
+
+function topCategoriesWithOther(
+  categories: DashboardBreakdownPoint[],
+  topCount: number
+): DashboardBreakdownPoint[] {
+  if (categories.length <= topCount) {
+    return categories
+  }
+
+  const top = categories.slice(0, topCount)
+  const otherTotal = categories.slice(topCount).reduce((sum, item) => sum + item.value, 0)
+  if (otherTotal > 0) {
+    top.push({ name: 'Other', value: otherTotal })
+  }
+
+  return top
 }
 
 export default function DashboardPage() {
@@ -159,14 +178,24 @@ export default function DashboardPage() {
       const currentRequestId = ++requestIdRef.current
       const isInitialLoad = !hasFetchedRef.current
       const selectedDatasetId = filters.datasetId || activeDatasetId
-      const query =
-        selectedDatasetId && selectedDatasetId.length > 0
-          ? `?activeDatasetId=${encodeURIComponent(selectedDatasetId)}`
-          : ''
+      const requestDateWindow = toDateWindow(filters.dateRange, filters.customFrom, filters.customTo)
+      const params = new URLSearchParams()
+      if (selectedDatasetId && selectedDatasetId.length > 0) {
+        params.set('activeDatasetId', selectedDatasetId)
+      }
+      if (requestDateWindow.from) {
+        params.set('from', toQueryDate(requestDateWindow.from))
+      }
+      if (requestDateWindow.to) {
+        params.set('to', toQueryDate(requestDateWindow.to))
+      }
+      const query = params.toString().length > 0 ? `?${params.toString()}` : ''
 
       debugDashboard('fetch:start', {
         reason,
         selectedDatasetId,
+        from: requestDateWindow.from ? toQueryDate(requestDateWindow.from) : null,
+        to: requestDateWindow.to ? toQueryDate(requestDateWindow.to) : null,
         query,
       })
 
@@ -220,7 +249,15 @@ export default function DashboardPage() {
         hasFetchedRef.current = true
       }
     },
-    [activeDatasetId, activeDatasetName, filters.datasetId, setActiveDataset]
+    [
+      activeDatasetId,
+      activeDatasetName,
+      filters.customFrom,
+      filters.customTo,
+      filters.datasetId,
+      filters.dateRange,
+      setActiveDataset,
+    ]
   )
 
   const loadDatasets = useCallback(async () => {
@@ -322,20 +359,10 @@ export default function DashboardPage() {
     [allTransactions]
   )
 
-  const lineSeries = useMemo(() => {
-    const source = summary?.charts.monthlySeries ?? []
-    if (!source.length) return []
-
-    if (!dateWindow.from && !dateWindow.to) return source
-
-    return source.filter((point) => {
-      const parsed = parseMonthLabelDate(point.label)
-      if (!parsed) return false
-      if (dateWindow.from && parsed < dateWindow.from) return false
-      if (dateWindow.to && parsed > dateWindow.to) return false
-      return true
-    })
-  }, [dateWindow.from, dateWindow.to, summary?.charts.monthlySeries])
+  const lineSeries = useMemo(
+    () => summary?.charts.monthlySeries ?? [],
+    [summary?.charts.monthlySeries]
+  )
 
   const aggregatedCategories = useMemo(
     () => aggregateCategoryTotals(filteredTransactions),
@@ -351,10 +378,12 @@ export default function DashboardPage() {
   )
 
   const donutData = useMemo(
-    () =>
-      aggregatedCategories.length
-        ? aggregatedCategories.slice(0, 6)
-        : (summary?.charts.expenseBreakdown ?? []).slice(0, 6),
+    () => {
+      const source = aggregatedCategories.length
+        ? aggregatedCategories
+        : (summary?.charts.expenseBreakdown ?? [])
+      return topCategoriesWithOther(source, 6)
+    },
     [aggregatedCategories, summary?.charts.expenseBreakdown]
   )
 

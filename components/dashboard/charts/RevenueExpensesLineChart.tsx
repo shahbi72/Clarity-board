@@ -35,7 +35,7 @@ export function RevenueExpensesLineChart({ data }: RevenueExpensesLineChartProps
   }
 
   return (
-    <div className="h-[320px]">
+    <div className="h-[320px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />

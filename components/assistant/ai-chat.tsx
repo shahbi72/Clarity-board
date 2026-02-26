@@ -9,74 +9,172 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { mockChatMessages, suggestedQuestions, type ChatMessage } from '@/lib/mock-data'
 
-const aiResponses: Record<string, string> = {
-  'which products are going out of stock?': `Based on your current inventory data, I've identified the following products that need attention:
+type ExecutiveResponseTemplate = {
+  executiveSummary: string
+  riskContext: string
+  risks: string[]
+  impactContext: string
+  impacts: string[]
+  recommendationContext: string
+  recommendations: string[]
+}
 
-**Critical (Out of Stock):**
-- Fitness Tracker Pro - 0 units remaining, high demand detected
+const executiveResponseTemplates: Record<string, ExecutiveResponseTemplate> = {
+  'which products are going out of stock?': {
+    executiveSummary:
+      'Inventory pressure is concentrated in three SKUs, with one product already at stockout and two operating below a one-week coverage threshold.',
+    riskContext:
+      'The primary risk is immediate demand leakage in high-velocity products, followed by customer churn from repeated stock unavailability.',
+    risks: [
+      'Fitness Tracker Pro is at 0 units and currently unable to capture demand.',
+      'Organic Coffee Blend has 12 units with an estimated 3-day runway.',
+      'Bluetooth Speaker Mini has 8 units with an estimated 5-day runway.',
+    ],
+    impactContext:
+      'Without intervention, the shortfall is expected to reduce near-term revenue and weaken conversion in repeat sessions.',
+    impacts: [
+      'Projected daily revenue leakage is highest in Fitness Tracker Pro based on current demand velocity.',
+      'Stockouts in two adjacent categories can reduce basket size and lower weekly gross margin contribution.',
+    ],
+    recommendationContext:
+      'The most effective response is a staged replenishment plan aligned to urgency and margin profile.',
+    recommendations: [
+      'Execute immediate purchase orders for Fitness Tracker Pro and Organic Coffee Blend.',
+      'Issue a secondary order for Bluetooth Speaker Mini with a 7-day buffer target.',
+      'Set automatic reorder triggers at 14 days of projected coverage for top-demand SKUs.',
+    ],
+  },
+  'what products are underperforming?': {
+    executiveSummary:
+      'Performance dispersion is being driven by one product with negative unit economics and one product materially below category benchmark.',
+    riskContext:
+      'The immediate risk is margin dilution from continuing to scale products that are not clearing target contribution thresholds.',
+    risks: [
+      'Eco-Friendly Water Bottle is operating at -$3,700 profit with costs exceeding revenue by 8.2%.',
+      'Desk Organizer Set is 45% below category-average profitability.',
+      'Current mix allocation is absorbing working capital without proportional return.',
+    ],
+    impactContext:
+      'If this mix persists through the next planning cycle, profitability will underperform despite stable top-line volume.',
+    impacts: [
+      'Projected margin recovery from correcting Water Bottle unit economics is meaningful within one quarter.',
+      'Repositioning low-yield inventory can improve capital efficiency and reduce carrying risk.',
+    ],
+    recommendationContext:
+      'A targeted correction strategy should focus on economics first, then packaging and channel fit.',
+    recommendations: [
+      'Renegotiate supplier pricing or adjust retail pricing on Eco-Friendly Water Bottle immediately.',
+      'Test bundle positioning for Desk Organizer Set to improve attach rate and effective margin.',
+      'Reallocate marketing spend toward categories with proven contribution performance.',
+    ],
+  },
+  'how can i increase my sales?': {
+    executiveSummary:
+      'The highest-confidence growth path combines inventory availability, margin-led assortment focus, and promotion timing optimization.',
+    riskContext:
+      'Growth is currently constrained by avoidable operational gaps rather than demand quality.',
+    risks: [
+      'Top-revenue SKU unavailability is capping realized sales despite active demand.',
+      'Promotional effort is not fully aligned with peak conversion windows.',
+      'Price architecture appears under-optimized in select high-intent products.',
+    ],
+    impactContext:
+      'Addressing these constraints should lift both conversion and contribution margin in the next cycle.',
+    impacts: [
+      'Projected uplift from restoring top-demand inventory and timing promotions to peak days is material.',
+      'Margin expansion is achievable through selective price optimization in resilient SKUs.',
+    ],
+    recommendationContext:
+      'Execution should prioritize fast, measurable levers before broader strategic changes.',
+    recommendations: [
+      'Restore inventory depth in high-demand products before expanding paid acquisition.',
+      'Prioritize Electronics in campaign allocation given stronger margin profile.',
+      'Launch Wednesday/Thursday promotional tests and monitor incremental conversion.',
+      'Run controlled price tests on Yoga Mat Premium with margin guardrails.',
+    ],
+  },
+  'what should i restock?': {
+    executiveSummary:
+      'Restocking should be sequenced by revenue-at-risk and remaining days of supply, with immediate action on two critical SKUs.',
+    riskContext:
+      'Current stock posture exposes the business to short-term revenue loss and avoidable fulfillment instability.',
+    risks: [
+      'Fitness Tracker Pro is already stockout and currently not monetizing demand.',
+      'Organic Coffee Blend is within a 3-day depletion window.',
+      'Bluetooth Speaker Mini is within a 5-day depletion window.',
+    ],
+    impactContext:
+      'A delayed restock cycle will likely suppress weekly revenue and increase reacquisition cost for returning buyers.',
+    impacts: [
+      'Projected revenue recovery is strongest when top two SKUs are replenished immediately.',
+      'Maintaining a structured safety-stock policy lowers repeat stockout probability.',
+    ],
+    recommendationContext:
+      'Use a two-wave procurement plan to stabilize availability while preserving cash discipline.',
+    recommendations: [
+      'Restock today: Fitness Tracker Pro (200 units) and Organic Coffee Blend (150 units).',
+      'Restock this week: Bluetooth Speaker Mini (75 units) and Smart Home Hub based on turnover.',
+      'Implement dynamic reorder points tied to demand velocity and supplier lead time.',
+    ],
+  },
+  default: {
+    executiveSummary:
+      'Current performance remains fundamentally sound, with clear opportunities to improve margin resilience and capture incremental revenue.',
+    riskContext:
+      'The main strategic risk is allowing operational inefficiencies to compound while growth demand remains available.',
+    risks: [
+      'Inventory interruptions are limiting conversion on high-demand products.',
+      'At least one product line is contributing negative margin.',
+      'Resource allocation is not fully concentrated on highest-return categories.',
+    ],
+    impactContext:
+      'With focused execution, the business can improve both top-line throughput and operating quality in the near term.',
+    impacts: [
+      'Projected impact includes stronger realized revenue and more stable gross margin performance.',
+      'Improved assortment discipline is expected to increase capital productivity.',
+    ],
+    recommendationContext:
+      'Prioritize decisions that protect margin quality while accelerating revenue capture.',
+    recommendations: [
+      'Resolve immediate stockout risks in high-velocity SKUs.',
+      'Correct negative-margin products through pricing and procurement actions.',
+      'Concentrate growth spend in categories with superior contribution profile.',
+    ],
+  },
+}
 
-**Low Stock (< 20 units):**
-- Organic Coffee Blend - 12 units, estimated 3 days until depletion
-- Bluetooth Speaker Mini - 8 units, estimated 5 days until depletion
+function formatExecutiveResponse(template: ExecutiveResponseTemplate): string {
+  const riskLines = template.risks.map((item) => `- ${item}`)
+  const impactLines = template.impacts.map((item) => `- ${item}`)
+  const recommendationLines = template.recommendations.map((item, index) => `${index + 1}. ${item}`)
 
-I recommend creating purchase orders for these items immediately to avoid lost sales.`,
-
-  'what products are underperforming?': `Looking at your profitability data, here are the underperforming products:
-
-**Negative Margins:**
-- Eco-Friendly Water Bottle: -$3,700 profit (expenses exceed revenue by 8.2%)
-
-**Below Average Performance:**
-- Desk Organizer Set: $10,600 profit (45% below category average)
-
-Consider renegotiating supplier contracts or adjusting pricing for the Water Bottle. The Desk Organizer might benefit from bundling with other office products.`,
-
-  'how can i increase my sales?': `Based on your data patterns, here are actionable recommendations:
-
-1. **Restock High-Demand Items** - Fitness Tracker Pro has the highest revenue potential but is out of stock
-
-2. **Bundle Strategy** - Premium Wireless Headphones + accessories could increase AOV by 23%
-
-3. **Category Focus** - Electronics category shows strongest margins (average 42% profit)
-
-4. **Timing** - Your sales peak on Wednesdays and Thursdays. Consider running promotions on these days.
-
-5. **Price Optimization** - Yoga Mat Premium has room for a 10% price increase based on competitive analysis`,
-
-  'what should i restock?': `Priority restock recommendations based on sales velocity and current inventory:
-
-**Urgent (Restock Today):**
-1. Fitness Tracker Pro - Out of stock, losing ~$3,400/day in potential revenue
-2. Organic Coffee Blend - 3-day supply remaining
-
-**This Week:**
-3. Bluetooth Speaker Mini - 5-day supply remaining
-4. Smart Home Hub - moderate turnover, healthy margins
-
-**Suggested Order Quantities:**
-- Fitness Tracker Pro: 200 units
-- Organic Coffee Blend: 150 units
-- Bluetooth Speaker Mini: 75 units`,
-
-  default: `I've analyzed your business data and here's what I found:
-
-Your overall performance is strong with a 32.4% profit margin this month. Key areas of focus should be:
-
-1. **Inventory Management** - Several products need restocking
-2. **Cost Optimization** - One product has negative margins
-3. **Growth Opportunity** - Electronics category shows the highest potential
-
-Would you like me to dive deeper into any of these areas?`,
+  return [
+    '**Executive Summary**',
+    template.executiveSummary,
+    '',
+    '**Risk Analysis**',
+    template.riskContext,
+    ...riskLines,
+    '',
+    '**Business Impact**',
+    template.impactContext,
+    ...impactLines,
+    '',
+    '**Strategic Recommendation**',
+    template.recommendationContext,
+    ...recommendationLines,
+  ].join('\n')
 }
 
 function getAIResponse(question: string): string {
   const normalizedQuestion = question.toLowerCase().trim()
-  for (const [key, value] of Object.entries(aiResponses)) {
+  for (const [key, template] of Object.entries(executiveResponseTemplates)) {
+    if (key === 'default') continue
     if (normalizedQuestion.includes(key) || key.includes(normalizedQuestion)) {
-      return value
+      return formatExecutiveResponse(template)
     }
   }
-  return aiResponses.default
+  return formatExecutiveResponse(executiveResponseTemplates.default)
 }
 
 export function AIChat() {
@@ -182,7 +280,9 @@ export function AIChat() {
               </Avatar>
               <div className="flex items-center gap-2 rounded-lg bg-muted px-4 py-3">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Analyzing your data...</span>
+                <span className="text-sm text-muted-foreground">
+                  Preparing executive analysis...
+                </span>
               </div>
             </div>
           )}
@@ -217,7 +317,7 @@ export function AIChat() {
           className="flex gap-2"
         >
           <Input
-            placeholder="Ask about your business data..."
+            placeholder="Request an executive analysis of your business data..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={isTyping}

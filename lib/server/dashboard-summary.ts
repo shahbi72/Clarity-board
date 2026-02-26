@@ -28,15 +28,29 @@ const COLUMN_ALIASES = {
   customer: ['customer', 'customer_name', 'customername', 'client'],
 }
 
+type DashboardDateRange = {
+  from: Date | null
+  to: Date | null
+}
+
+type TrendGranularity = 'day' | 'week' | 'month'
+
+type TrendPointInput = {
+  date: Date
+  revenue: number
+  expenses: number
+}
+
 export async function getDashboardSummaryForUser(
   userId: string,
-  preferredActiveDatasetId: string | null = null
+  preferredActiveDatasetId: string | null = null,
+  preferredDateRange: DashboardDateRange = { from: null, to: null }
 ): Promise<DashboardSummaryResponse> {
   await ensureCurrentUser(userId)
 
   const dataset = await resolveActiveDatasetForSummary(userId, preferredActiveDatasetId)
   if (!dataset) {
-    return createEmptySummary()
+    return createEmptyDashboardSummary()
   }
 
   const rows = await prisma.datasetRow.findMany({
@@ -51,7 +65,7 @@ export async function getDashboardSummaryForUser(
   let totalRevenue = 0
   let totalExpenses = 0
 
-  const monthlyMap = new Map<string, { revenue: number; expenses: number }>()
+  const trendPoints: TrendPointInput[] = []
   const productRevenueMap = new Map<string, number>()
   const categoryTotalMap = new Map<string, number>()
   const expenseByCategoryMap = new Map<string, number>()
@@ -69,49 +83,44 @@ export async function getDashboardSummaryForUser(
     const amountValue = parseNumericValue(record[mappings.amountColumn ?? ''])
     const typeValue = toLowerText(record[mappings.typeColumn ?? ''])
 
-    let rowRevenue = 0
-    let rowExpense = 0
-
-    if (revenueValue != null || expenseValue != null) {
-      rowRevenue = revenueValue != null ? Math.abs(revenueValue) : 0
-      rowExpense = expenseValue != null ? Math.abs(expenseValue) : 0
-    } else if (amountValue != null) {
-      const inferredType = inferAmountType(typeValue, amountValue)
-      if (inferredType === 'expense') {
-        rowExpense = Math.abs(amountValue)
-      } else {
-        rowRevenue = Math.abs(amountValue)
-      }
+    let effectiveAmount: number | null = null
+    if (amountValue != null) {
+      effectiveAmount = amountValue
+    } else if (revenueValue != null || expenseValue != null) {
+      const normalizedRevenue = revenueValue != null ? Math.abs(revenueValue) : 0
+      const normalizedExpense = expenseValue != null ? Math.abs(expenseValue) : 0
+      effectiveAmount = normalizedRevenue - normalizedExpense
     }
+
+    const rowRevenue = effectiveAmount != null && effectiveAmount > 0 ? effectiveAmount : 0
+    const rowExpense = effectiveAmount != null && effectiveAmount < 0 ? Math.abs(effectiveAmount) : 0
 
     if (rowRevenue > 0 || rowExpense > 0) {
       totalRevenue += rowRevenue
       totalExpenses += rowExpense
 
       if (dateValue) {
-        const monthKey = `${dateValue.getUTCFullYear()}-${String(dateValue.getUTCMonth() + 1).padStart(2, '0')}`
-        const monthBucket = monthlyMap.get(monthKey) ?? { revenue: 0, expenses: 0 }
-        monthBucket.revenue += rowRevenue
-        monthBucket.expenses += rowExpense
-        monthlyMap.set(monthKey, monthBucket)
+        trendPoints.push({
+          date: dateValue,
+          revenue: rowRevenue,
+          expenses: rowExpense,
+        })
       }
 
       const productName =
         toText(record[mappings.productColumn ?? '']) ?? toText(record[mappings.customerColumn ?? ''])
-      const categoryName = toText(record[mappings.categoryColumn ?? ''])
+      const categoryName = normalizeCategory(record[mappings.categoryColumn ?? ''])
 
       if (productName && rowRevenue > 0) {
         productRevenueMap.set(productName, (productRevenueMap.get(productName) ?? 0) + rowRevenue)
       }
 
-      if (categoryName) {
-        categoryTotalMap.set(
-          categoryName,
-          (categoryTotalMap.get(categoryName) ?? 0) + rowRevenue + rowExpense
-        )
-      }
+      categoryTotalMap.set(
+        categoryName,
+        (categoryTotalMap.get(categoryName) ?? 0) + rowRevenue + rowExpense
+      )
 
-      if (categoryName && rowExpense > 0) {
+      if (rowExpense > 0) {
         expenseByCategoryMap.set(
           categoryName,
           (expenseByCategoryMap.get(categoryName) ?? 0) + rowExpense
@@ -137,33 +146,29 @@ export async function getDashboardSummaryForUser(
         rowIndex: row.rowIndex,
         date: dateLabel,
         description,
-        category: toText(record[mappings.categoryColumn ?? '']),
+        category: normalizeCategory(record[mappings.categoryColumn ?? '']),
         type:
           rowExpense > 0
             ? 'expense'
             : rowRevenue > 0
               ? 'revenue'
-              : inferAmountType(typeValue, amountValue ?? 0) ?? 'unknown',
+              : inferAmountType(typeValue, effectiveAmount ?? amountValue ?? 0) ?? 'unknown',
         revenue: round2(rowRevenue),
         expense: round2(rowExpense),
-        amount: round2(rowRevenue - rowExpense),
+        amount: round2(effectiveAmount ?? rowRevenue - rowExpense),
         data: record,
       })
     }
   }
 
-  const monthlySeries = Array.from(monthlyMap.entries())
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([monthKey, values]) => ({
-      label: formatMonthLabel(monthKey),
-      revenue: round2(values.revenue),
-      expenses: round2(values.expenses),
-      profit: round2(values.revenue - values.expenses),
-    }))
+  const monthlySeries =
+    mappings.dateColumn != null
+      ? buildContinuousTrendSeries(trendPoints, preferredDateRange)
+      : []
 
   const topItemsSource = productRevenueMap.size > 0 ? productRevenueMap : categoryTotalMap
   const topItems = toBreakdownPoints(topItemsSource, 8)
-  const expenseBreakdown = toBreakdownPoints(expenseByCategoryMap, 6)
+  const expenseBreakdown = toTopCategoriesWithOther(expenseByCategoryMap, 6)
 
   const sortedRecent = recentTransactions
     .sort((a, b) => {
@@ -217,7 +222,7 @@ export async function getDashboardSummaryForUser(
     previewRows,
     recentTransactions: sortedRecent,
     fallback: {
-      monthlySeries: getMonthlyFallback(monthlySeries, mappings),
+      monthlySeries: getTrendFallback(monthlySeries, mappings),
       topItems: topItems.length > 0 ? null : 'Not enough product/category data for the top-items chart.',
       expenseBreakdown:
         expenseBreakdown.length > 0
@@ -227,7 +232,7 @@ export async function getDashboardSummaryForUser(
   }
 }
 
-function createEmptySummary(): DashboardSummaryResponse {
+export function createEmptyDashboardSummary(): DashboardSummaryResponse {
   return {
     dataset: null,
     mappings: {
@@ -257,7 +262,7 @@ function createEmptySummary(): DashboardSummaryResponse {
     previewRows: [],
     recentTransactions: [],
     fallback: {
-      monthlySeries: 'Upload and activate a dataset to view monthly trends.',
+      monthlySeries: 'Upload and activate a dataset to view trend data.',
       topItems: 'Upload and activate a dataset to view top items.',
       expenseBreakdown: 'Upload and activate a dataset to view expense breakdown.',
     },
@@ -425,16 +430,205 @@ function toIsoDate(value: Date): string {
     .slice(0, 10)
 }
 
-function formatMonthLabel(monthKey: string): string {
-  const [yearText, monthText] = monthKey.split('-')
-  const year = Number(yearText)
-  const month = Number(monthText)
-  if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
-    return monthKey
+function normalizeCategory(value: unknown): string {
+  return toText(value) ?? 'Uncategorized'
+}
+
+function buildContinuousTrendSeries(
+  points: TrendPointInput[],
+  preferredDateRange: DashboardDateRange
+): DashboardSeriesPoint[] {
+  const resolvedRange = resolveTrendRange(points, preferredDateRange)
+  if (!resolvedRange) return []
+
+  const granularity = chooseTrendGranularity(resolvedRange.from, resolvedRange.to)
+  const totalsByBucket = new Map<string, { revenue: number; expenses: number }>()
+
+  for (const point of points) {
+    const timestamp = point.date.getTime()
+    if (timestamp < resolvedRange.from.getTime() || timestamp > resolvedRange.to.getTime()) {
+      continue
+    }
+
+    const bucketStart = getBucketStart(point.date, granularity)
+    const bucketKey = toIsoDate(bucketStart)
+    const bucket = totalsByBucket.get(bucketKey) ?? { revenue: 0, expenses: 0 }
+    bucket.revenue += point.revenue
+    bucket.expenses += point.expenses
+    totalsByBucket.set(bucketKey, bucket)
   }
 
-  const date = new Date(Date.UTC(year, month - 1, 1))
-  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+  const bucketStarts = buildContinuousBucketStarts(
+    resolvedRange.from,
+    resolvedRange.to,
+    granularity
+  )
+
+  return bucketStarts.map((bucketStart) => {
+    const bucketKey = toIsoDate(bucketStart)
+    const totals = totalsByBucket.get(bucketKey) ?? { revenue: 0, expenses: 0 }
+    const revenue = round2(totals.revenue)
+    const expenses = round2(totals.expenses)
+
+    return {
+      label: formatTrendLabel(bucketStart, granularity),
+      revenue,
+      expenses,
+      profit: round2(revenue - expenses),
+    }
+  })
+}
+
+function resolveTrendRange(
+  points: TrendPointInput[],
+  preferredDateRange: DashboardDateRange
+): { from: Date; to: Date } | null {
+  const normalizedRange = normalizeDateRange(preferredDateRange)
+  const hasExplicitFrom = normalizedRange.from != null
+  const hasExplicitTo = normalizedRange.to != null
+  const earliestPoint = points.reduce<Date | null>(
+    (current, point) =>
+      current == null || point.date.getTime() < current.getTime() ? point.date : current,
+    null
+  )
+  const latestPoint = points.reduce<Date | null>(
+    (current, point) =>
+      current == null || point.date.getTime() > current.getTime() ? point.date : current,
+    null
+  )
+
+  const from =
+    normalizedRange.from != null
+      ? startOfUtcDay(normalizedRange.from)
+      : earliestPoint != null
+        ? startOfUtcDay(earliestPoint)
+        : null
+  const to =
+    normalizedRange.to != null
+      ? endOfUtcDay(normalizedRange.to)
+      : latestPoint != null
+        ? endOfUtcDay(latestPoint)
+        : from != null
+          ? endOfUtcDay(from)
+          : null
+
+  if (!from || !to) return null
+  if (from.getTime() > to.getTime()) {
+    if (hasExplicitFrom && !hasExplicitTo) {
+      return {
+        from: startOfUtcDay(normalizedRange.from as Date),
+        to: endOfUtcDay(normalizedRange.from as Date),
+      }
+    }
+
+    if (!hasExplicitFrom && hasExplicitTo) {
+      return {
+        from: startOfUtcDay(normalizedRange.to as Date),
+        to: endOfUtcDay(normalizedRange.to as Date),
+      }
+    }
+
+    return {
+      from: startOfUtcDay(to),
+      to: endOfUtcDay(from),
+    }
+  }
+
+  return { from, to }
+}
+
+function normalizeDateRange(range: DashboardDateRange): DashboardDateRange {
+  if (!range.from || !range.to) {
+    return range
+  }
+
+  if (range.from.getTime() <= range.to.getTime()) {
+    return range
+  }
+
+  return {
+    from: range.to,
+    to: range.from,
+  }
+}
+
+function chooseTrendGranularity(from: Date, to: Date): TrendGranularity {
+  const dayMs = 24 * 60 * 60 * 1000
+  const fromStart = startOfUtcDay(from).getTime()
+  const toStart = startOfUtcDay(to).getTime()
+  const daySpan = Math.floor((toStart - fromStart) / dayMs) + 1
+
+  if (daySpan <= 45) return 'day'
+  if (daySpan <= 180) return 'week'
+  return 'month'
+}
+
+function buildContinuousBucketStarts(from: Date, to: Date, granularity: TrendGranularity): Date[] {
+  const bucketStarts: Date[] = []
+  let cursor = getBucketStart(from, granularity)
+  const endBucketStart = getBucketStart(to, granularity)
+
+  while (cursor.getTime() <= endBucketStart.getTime()) {
+    bucketStarts.push(cursor)
+    cursor = addBucket(cursor, granularity, 1)
+  }
+
+  return bucketStarts
+}
+
+function getBucketStart(date: Date, granularity: TrendGranularity): Date {
+  if (granularity === 'day') return startOfUtcDay(date)
+  if (granularity === 'week') return startOfUtcWeek(date)
+  return startOfUtcMonth(date)
+}
+
+function addBucket(date: Date, granularity: TrendGranularity, amount: number): Date {
+  if (granularity === 'day') return addUtcDays(date, amount)
+  if (granularity === 'week') return addUtcDays(date, amount * 7)
+
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + amount, 1))
+}
+
+function formatTrendLabel(bucketStart: Date, granularity: TrendGranularity): string {
+  if (granularity === 'day') {
+    return bucketStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
+  if (granularity === 'week') {
+    const weekEnd = addUtcDays(bucketStart, 6)
+    const startLabel = bucketStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    const endLabel = weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    return `${startLabel} - ${endLabel}`
+  }
+
+  return bucketStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+}
+
+function startOfUtcDay(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+}
+
+function endOfUtcDay(date: Date): Date {
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999)
+  )
+}
+
+function startOfUtcWeek(date: Date): Date {
+  const dayStart = startOfUtcDay(date)
+  const weekday = dayStart.getUTCDay()
+  const offset = weekday === 0 ? -6 : 1 - weekday
+  return addUtcDays(dayStart, offset)
+}
+
+function startOfUtcMonth(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1))
+}
+
+function addUtcDays(date: Date, days: number): Date {
+  const copy = new Date(date.getTime())
+  copy.setUTCDate(copy.getUTCDate() + days)
+  return copy
 }
 
 function inferAmountType(
@@ -475,7 +669,33 @@ function toBreakdownPoints(source: Map<string, number>, take: number): Dashboard
     .slice(0, take)
 }
 
-function getMonthlyFallback(
+function toTopCategoriesWithOther(
+  source: Map<string, number>,
+  topCount: number
+): DashboardBreakdownPoint[] {
+  const sorted = Array.from(source.entries())
+    .map(([name, value]) => ({ name, value: round2(value) }))
+    .filter((item) => item.value > 0)
+    .sort((a, b) => b.value - a.value)
+
+  if (sorted.length <= topCount) {
+    return sorted
+  }
+
+  const topCategories = sorted.slice(0, topCount)
+  const otherTotal = round2(sorted.slice(topCount).reduce((sum, item) => sum + item.value, 0))
+
+  if (otherTotal > 0) {
+    topCategories.push({
+      name: 'Other',
+      value: otherTotal,
+    })
+  }
+
+  return topCategories
+}
+
+function getTrendFallback(
   series: DashboardSeriesPoint[],
   mappings: {
     dateColumn: string | null
@@ -485,11 +705,11 @@ function getMonthlyFallback(
   }
 ): string | null {
   if (series.length > 0) return null
-  if (!mappings.dateColumn) return 'Not enough date data for monthly trend chart.'
+  if (!mappings.dateColumn) return 'Not enough date data for trend chart.'
   if (!mappings.amountColumn && !mappings.revenueColumn && !mappings.expenseColumn) {
-    return 'Not enough numeric columns (amount/revenue/expense) for monthly trend chart.'
+    return 'Not enough numeric columns (amount/revenue/expense) for trend chart.'
   }
-  return 'Not enough data points for monthly trend chart.'
+  return 'Not enough data points for trend chart.'
 }
 
 function round2(value: number): number {

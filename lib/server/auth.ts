@@ -4,6 +4,7 @@ import {
   hasFallbackSessionValue,
   isFallbackAuthEnabled,
 } from '@/lib/auth/fallback-session'
+import { isDatabaseConnectivityError } from '@/lib/server/database-errors'
 import { prisma } from '@/lib/server/prisma'
 import { HttpError } from '@/lib/server/http-error'
 import { getSupabaseServerClient, isSupabaseAuthConfigured } from '@/lib/supabase/server'
@@ -59,9 +60,14 @@ export async function ensureCurrentUser(userId: string) {
     const isDatabaseUrlError =
       normalizedMessage.includes('datasource') &&
       normalizedMessage.includes('url')
+    const isConnectivityError = isDatabaseConnectivityError(error)
 
     if (isDatabaseUrlError) {
       throw new Error(POSTGRES_DATABASE_URL_HELP)
+    }
+
+    if (isConnectivityError) {
+      throw new Error('Database connection unavailable. Unable to reach Postgres.')
     }
 
     throw new Error('Unable to initialize user data. Check database configuration and permissions.')

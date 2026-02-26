@@ -313,7 +313,8 @@ export const mockChatMessages: ChatMessage[] = [
   {
     id: '1',
     role: 'assistant',
-    content: 'Welcome to ClarityBoard! I can help you understand your business data. Ask me anything about your revenue, inventory, or trends.',
+    content:
+      'I provide executive-level business analysis in four sections: Executive Summary, Risk Analysis, Business Impact, and Strategic Recommendation. Ask a question about revenue, inventory, margins, or trends to begin.',
     timestamp: '10:00 AM',
   },
 ]
