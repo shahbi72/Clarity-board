@@ -35,14 +35,14 @@ export const metadata: Metadata = {
       process.env.NEXT_PUBLIC_SITE_URL ??
       'https://clarity-board-ui-build.vercel.app'
   ),
-  title: 'ClarityBoard - Transform Messy Data into Business Insights',
+  title: 'Clarityboard - Shopify Orders Clarity',
   description:
-    'Upload any file type - CSV, Excel, PDF, JSON, images. ClarityBoard automatically cleans, structures, and analyzes your data into powerful business dashboards.',
-  keywords: ['business intelligence', 'data analytics', 'dashboard', 'data cleaning', 'AI insights'],
+    'Upload Shopify Orders CSV and instantly see revenue, orders, AOV, units sold, and top products.',
+  keywords: ['shopify analytics', 'shopify orders csv', 'shopify dashboard', 'ecommerce revenue'],
   openGraph: {
-    title: 'ClarityBoard - Transform Messy Data into Business Insights',
+    title: 'Clarityboard - Shopify Orders Clarity',
     description:
-      'Upload any file type - CSV, Excel, PDF, JSON, images. ClarityBoard automatically cleans, structures, and analyzes your data into powerful business dashboards.',
+      'Upload Shopify Orders CSV and instantly see revenue, orders, AOV, units sold, and top products.',
     images: [
       {
         url: '/assets/logo/clarityboard-logo.png',

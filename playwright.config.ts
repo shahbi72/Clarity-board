@@ -15,12 +15,12 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'reports',
-      testMatch: /reports-.*\.spec\.ts/,
+      name: 'shopify',
+      testMatch: /shopify-.*\.spec\.ts/,
     },
     {
       name: 'legacy',
-      testIgnore: /reports-.*\.spec\.ts/,
+      testIgnore: /shopify-.*\.spec\.ts/,
     },
   ],
 })

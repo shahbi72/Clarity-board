@@ -40,6 +40,18 @@ function isNoRowsError(error: PostgrestError | null): boolean {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  if (pathname.startsWith('/api/reports') || pathname.startsWith('/api/cron')) {
+    return NextResponse.json(
+      { error: 'Disabled for Shopify MVP: this endpoint has been deprecated.' },
+      { status: 410 }
+    )
+  }
+
+  if (pathname.startsWith('/reports')) {
+    return createAppRedirect(request, '/')
+  }
+
   if (!pathname.startsWith('/app')) {
     return NextResponse.next()
   }
@@ -126,5 +138,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/app/:path*'],
+  matcher: ['/app/:path*', '/reports/:path*', '/api/reports/:path*', '/api/cron/:path*'],
 }

@@ -1,27 +1,53 @@
+import { createHash } from 'crypto'
 import Papa from 'papaparse'
-import * as XLSX from 'xlsx'
 import { HttpError } from '@/lib/server/http-error'
 import type { DataRow } from '@/lib/types/data-pipeline'
 
 export const MAX_UPLOAD_FILE_SIZE_BYTES = 25 * 1024 * 1024
-const MAX_COLUMNS = 200
 const MAX_ROWS = 100_000
-const SUPPORTED_EXTENSIONS = new Set(['csv', 'xlsx', 'xls'])
+const SUPPORTED_EXTENSIONS = new Set(['csv'])
 
-const HEADER_HINTS = [
-  'date',
-  'transaction',
-  'amount',
-  'total',
-  'value',
-  'type',
-  'category',
-  'revenue',
-  'expense',
-  'product',
-  'customer',
-  'name',
-]
+const REQUIRED_COLUMN_ALIASES = {
+  orderName: ['name', 'order name'],
+  createdAt: ['created at', 'createdat'],
+  lineitemQuantity: ['lineitem quantity', 'line item quantity', 'lineitemquantity'],
+  lineitemName: ['lineitem name', 'line item name', 'lineitemname'],
+  lineitemPrice: ['lineitem price', 'line item price', 'lineitemprice'],
+} as const
+
+const OPTIONAL_COLUMN_ALIASES = {
+  orderId: ['id', 'order id'],
+  currency: ['currency'],
+  cancelledAt: ['cancelled at', 'canceled at'],
+  refundedAmount: ['refunded amount', 'refund amount'],
+  financialStatus: ['financial status', 'payment status'],
+  lineitemSku: ['lineitem sku', 'line item sku', 'sku'],
+  lineitemVariant: ['lineitem variant', 'line item variant', 'variant title'],
+  lineitemDiscount: ['lineitem discount', 'line item discount', 'discount amount'],
+  orderTotal: ['total', 'order total'],
+  costPerItem: ['cost per item', 'lineitem cost', 'line item cost', 'cogs'],
+} as const
+
+const CURRENCY_TO_USD: Record<string, number> = {
+  USD: 1,
+  CAD: 0.74,
+  EUR: 1.08,
+  GBP: 1.27,
+  AUD: 0.65,
+  NZD: 0.61,
+  JPY: 0.0067,
+  TRY: 0.031,
+}
+
+type ParsedCsvRow = Record<string, string>
+
+type ParsedColumns = {
+  [K in keyof typeof REQUIRED_COLUMN_ALIASES]: string
+}
+
+type OptionalParsedColumns = {
+  [K in keyof typeof OPTIONAL_COLUMN_ALIASES]: string | null
+}
 
 export type ParsedDatasetUpload = {
   columns: string[]
@@ -33,80 +59,110 @@ export type ParsedDatasetUpload = {
 
 export async function parseUploadedDatasetFile(file: File): Promise<ParsedDatasetUpload> {
   validateUploadedFile(file)
+  const text = await file.text()
+  return parseShopifyOrdersCsvText(text, file.name)
+}
 
-  const extension = getFileExtension(file.name)
-  const matrix = extension === 'csv' ? await parseCsvFile(file) : await parseExcelFile(file)
-  const prepared = prepareRows(matrix)
-
-  if (prepared.length === 0) {
-    throw new HttpError(400, 'No rows found in file.')
+export function parseShopifyOrdersCsvText(
+  csvText: string,
+  fileName = 'shopify-orders.csv'
+): ParsedDatasetUpload {
+  if (!csvText || !csvText.trim()) {
+    throw new HttpError(400, `The uploaded file "${fileName}" is empty.`)
   }
 
-  const hasHeader = shouldTreatFirstRowAsHeader(prepared[0])
-  const maxColumnCount = Math.min(
-    MAX_COLUMNS,
-    Math.max(...prepared.map((row) => row.length))
-  )
+  const parsed = Papa.parse<ParsedCsvRow>(csvText, {
+    header: true,
+    skipEmptyLines: 'greedy',
+    transformHeader: (header) => header.trim(),
+  })
 
-  const columns = hasHeader
-    ? sanitizeHeaderColumns(prepared[0], maxColumnCount)
-    : buildDefaultColumns(maxColumnCount)
+  if (parsed.errors.length > 0 && (!parsed.data || parsed.data.length === 0)) {
+    throw new HttpError(
+      400,
+      'Invalid Shopify Orders CSV. The file could not be parsed.'
+    )
+  }
 
-  const dataRows = hasHeader ? prepared.slice(1) : prepared
-  const normalizedRows: DataRow[] = []
+  const headers = (parsed.meta.fields ?? []).map((header) => header.trim()).filter(Boolean)
+  if (headers.length === 0) {
+    throw new HttpError(400, 'Invalid Shopify Orders CSV. Header row is missing.')
+  }
 
-  for (let rowIndex = 0; rowIndex < dataRows.length; rowIndex += 1) {
-    if (normalizedRows.length >= MAX_ROWS) {
+  const headerLookup = buildHeaderLookup(headers)
+  const requiredColumns = resolveRequiredColumns(headerLookup)
+  const missingRequiredColumns = Object.entries(requiredColumns)
+    .filter(([, value]) => !value)
+    .map(([key]) => key)
+
+  if (missingRequiredColumns.length > 0) {
+    throw new HttpError(
+      400,
+      `Invalid Shopify Orders CSV. Missing required Shopify columns: ${missingRequiredColumns.join(
+        ', '
+      )}.`
+    )
+  }
+
+  const optionalColumns = resolveOptionalColumns(headerLookup)
+  const dedupe = new Set<string>()
+  const cleanedRows: DataRow[] = []
+
+  for (const rawRow of parsed.data) {
+    const cleaned = cleanShopifyRow(rawRow, requiredColumns as ParsedColumns, optionalColumns)
+    if (!cleaned) {
+      continue
+    }
+
+    const rowHash = String(cleaned.rowHash)
+    if (dedupe.has(rowHash)) {
+      continue
+    }
+
+    dedupe.add(rowHash)
+    cleanedRows.push(cleaned)
+
+    if (cleanedRows.length > MAX_ROWS) {
       throw new HttpError(
         413,
-        `Dataset has more than ${MAX_ROWS.toLocaleString()} rows after cleaning. Split the file and retry.`
+        `Shopify export has more than ${MAX_ROWS.toLocaleString()} valid line items after cleaning. Split the export and retry.`
       )
     }
-
-    const row = dataRows[rowIndex] ?? []
-    const record: DataRow = {}
-    let hasValue = false
-
-    for (let columnIndex = 0; columnIndex < columns.length; columnIndex += 1) {
-      const columnName = columns[columnIndex]
-      const rawCell = row[columnIndex] ?? ''
-      const value = normalizeCellValue(rawCell)
-      record[columnName] = value
-      if (value !== null) {
-        hasValue = true
-      }
-    }
-
-    if (hasValue) {
-      normalizedRows.push(record)
-    }
   }
 
-  if (normalizedRows.length === 0) {
-    throw new HttpError(400, 'No valid data rows found after parsing.')
+  if (cleanedRows.length === 0) {
+    throw new HttpError(
+      400,
+      'Invalid Shopify Orders CSV. No valid order line items were found after cleaning.'
+    )
   }
+
+  const columns = Object.keys(cleanedRows[0])
 
   return {
     columns,
-    rows: normalizedRows,
-    previewRows: normalizedRows.slice(0, 50),
-    rowCount: normalizedRows.length,
-    fileType: extension.toUpperCase(),
+    rows: cleanedRows,
+    previewRows: cleanedRows.slice(0, 50),
+    rowCount: cleanedRows.length,
+    fileType: 'SHOPIFY_ORDERS_CSV',
   }
 }
 
 function validateUploadedFile(file: File) {
   if (!file) {
-    throw new HttpError(400, 'File is required.')
+    throw new HttpError(400, 'A Shopify Orders CSV file is required.')
   }
 
   const extension = getFileExtension(file.name)
   if (!SUPPORTED_EXTENSIONS.has(extension)) {
-    throw new HttpError(400, 'Unsupported file type. Please upload CSV or Excel files.')
+    throw new HttpError(
+      400,
+      'Unsupported file type. Upload the Shopify Orders export as CSV.'
+    )
   }
 
   if (file.size <= 0) {
-    throw new HttpError(400, 'Uploaded file is empty.')
+    throw new HttpError(400, 'Uploaded CSV is empty.')
   }
 
   if (file.size > MAX_UPLOAD_FILE_SIZE_BYTES) {
@@ -122,137 +178,285 @@ function validateUploadedFile(file: File) {
 function getFileExtension(fileName: string): string {
   const extension = fileName.split('.').pop()?.toLowerCase()?.trim()
   if (!extension) {
-    throw new HttpError(400, 'File must include an extension.')
+    throw new HttpError(400, 'CSV file extension is required.')
   }
   return extension
 }
 
-async function parseCsvFile(file: File): Promise<string[][]> {
-  const text = await file.text()
-  const parsed = Papa.parse<string[]>(text, {
-    header: false,
-    delimiter: '',
-    skipEmptyLines: 'greedy',
-  })
+function buildHeaderLookup(headers: string[]): Map<string, string> {
+  const lookup = new Map<string, string>()
+  for (const header of headers) {
+    lookup.set(normalizeHeaderKey(header), header)
+  }
+  return lookup
+}
 
-  if (parsed.errors.length > 0 && parsed.data.length === 0) {
-    throw new HttpError(400, 'Unable to parse CSV file.')
+function resolveRequiredColumns(headerLookup: Map<string, string>) {
+  return {
+    orderName: findHeaderByAliases(headerLookup, REQUIRED_COLUMN_ALIASES.orderName),
+    createdAt: findHeaderByAliases(headerLookup, REQUIRED_COLUMN_ALIASES.createdAt),
+    lineitemQuantity: findHeaderByAliases(headerLookup, REQUIRED_COLUMN_ALIASES.lineitemQuantity),
+    lineitemName: findHeaderByAliases(headerLookup, REQUIRED_COLUMN_ALIASES.lineitemName),
+    lineitemPrice: findHeaderByAliases(headerLookup, REQUIRED_COLUMN_ALIASES.lineitemPrice),
+  }
+}
+
+function resolveOptionalColumns(headerLookup: Map<string, string>): OptionalParsedColumns {
+  return {
+    orderId: findHeaderByAliases(headerLookup, OPTIONAL_COLUMN_ALIASES.orderId),
+    currency: findHeaderByAliases(headerLookup, OPTIONAL_COLUMN_ALIASES.currency),
+    cancelledAt: findHeaderByAliases(headerLookup, OPTIONAL_COLUMN_ALIASES.cancelledAt),
+    refundedAmount: findHeaderByAliases(headerLookup, OPTIONAL_COLUMN_ALIASES.refundedAmount),
+    financialStatus: findHeaderByAliases(headerLookup, OPTIONAL_COLUMN_ALIASES.financialStatus),
+    lineitemSku: findHeaderByAliases(headerLookup, OPTIONAL_COLUMN_ALIASES.lineitemSku),
+    lineitemVariant: findHeaderByAliases(headerLookup, OPTIONAL_COLUMN_ALIASES.lineitemVariant),
+    lineitemDiscount: findHeaderByAliases(headerLookup, OPTIONAL_COLUMN_ALIASES.lineitemDiscount),
+    orderTotal: findHeaderByAliases(headerLookup, OPTIONAL_COLUMN_ALIASES.orderTotal),
+    costPerItem: findHeaderByAliases(headerLookup, OPTIONAL_COLUMN_ALIASES.costPerItem),
+  }
+}
+
+function findHeaderByAliases(headerLookup: Map<string, string>, aliases: readonly string[]): string | null {
+  const normalizedAliases = aliases.map((alias) => normalizeHeaderKey(alias))
+
+  for (const alias of normalizedAliases) {
+    const exactMatch = headerLookup.get(alias)
+    if (exactMatch) {
+      return exactMatch
+    }
   }
 
-  return parsed.data.map((row) => row.map((cell) => String(cell ?? '')))
-}
-
-async function parseExcelFile(file: File): Promise<string[][]> {
-  const buffer = Buffer.from(await file.arrayBuffer())
-  const workbook = XLSX.read(buffer, { type: 'buffer' })
-  const firstSheetName = workbook.SheetNames[0]
-
-  if (!firstSheetName) {
-    throw new HttpError(400, 'Excel file does not contain any sheet.')
+  for (const [normalizedHeader, originalHeader] of headerLookup.entries()) {
+    if (normalizedAliases.some((alias) => normalizedHeader.includes(alias) || alias.includes(normalizedHeader))) {
+      return originalHeader
+    }
   }
 
-  const sheet = workbook.Sheets[firstSheetName]
-  const matrix = XLSX.utils.sheet_to_json<(string | number | boolean | null)[]>(sheet, {
-    header: 1,
-    raw: false,
-    defval: '',
-  })
-
-  return matrix.map((row) => row.map((cell) => String(cell ?? '')))
+  return null
 }
 
-function prepareRows(rows: string[][]): string[][] {
-  return rows
-    .map((row) => row.map((cell) => cell.trim()))
-    .filter((row) => row.some((cell) => cell !== ''))
-}
+function cleanShopifyRow(
+  rawRow: ParsedCsvRow,
+  requiredColumns: ParsedColumns,
+  optionalColumns: OptionalParsedColumns
+): DataRow | null {
+  const orderName = normalizeText(rawRow[requiredColumns.orderName])
+  const lineitemName = normalizeText(rawRow[requiredColumns.lineitemName])
+  const createdAt = parseShopifyDate(rawRow[requiredColumns.createdAt])
+  const quantity = Math.max(0, Math.round(parseCurrencyNumber(rawRow[requiredColumns.lineitemQuantity]) ?? 0))
+  const unitPrice = parseCurrencyNumber(rawRow[requiredColumns.lineitemPrice]) ?? 0
 
-function shouldTreatFirstRowAsHeader(firstRow: string[]): boolean {
-  const nonEmpty = firstRow.map((cell) => cell.trim()).filter(Boolean)
-  if (nonEmpty.length === 0) return false
+  if (!orderName || !lineitemName || !createdAt || quantity <= 0) {
+    return null
+  }
 
-  const alphaLikeCount = nonEmpty.filter((cell) => /[A-Za-z]/.test(cell)).length
-  const numericLikeCount = nonEmpty.filter((cell) => /^-?\d+([.,]\d+)?$/.test(cell)).length
-  const hintCount = nonEmpty.filter((cell) =>
-    HEADER_HINTS.some((hint) => normalizeColumnKey(cell).includes(hint))
-  ).length
-
-  return (
-    hintCount > 0 ||
-    (alphaLikeCount >= Math.ceil(nonEmpty.length / 2) && alphaLikeCount >= numericLikeCount)
+  const currency = normalizeCurrencyCode(optionalColumns.currency ? rawRow[optionalColumns.currency] : null)
+  const lineitemDiscount = parseCurrencyNumber(
+    optionalColumns.lineitemDiscount ? rawRow[optionalColumns.lineitemDiscount] : null
+  ) ?? 0
+  const refundedAmount = parseCurrencyNumber(
+    optionalColumns.refundedAmount ? rawRow[optionalColumns.refundedAmount] : null
+  ) ?? 0
+  const orderTotal = parseCurrencyNumber(
+    optionalColumns.orderTotal ? rawRow[optionalColumns.orderTotal] : null
   )
-}
+  const estimatedUnitCostRaw = parseCurrencyNumber(
+    optionalColumns.costPerItem ? rawRow[optionalColumns.costPerItem] : null
+  )
 
-function sanitizeHeaderColumns(headerRow: string[], maxColumnCount: number): string[] {
-  const taken = new Set<string>()
-  const columns: string[] = []
+  const sku = normalizeText(optionalColumns.lineitemSku ? rawRow[optionalColumns.lineitemSku] : null)
+  const variantTitle = normalizeVariantTitle(
+    optionalColumns.lineitemVariant ? rawRow[optionalColumns.lineitemVariant] : null
+  )
+  const productName = variantTitle ? `${lineitemName} - ${variantTitle}` : lineitemName
+  const lineGross = Math.max(0, quantity * unitPrice - lineitemDiscount)
+  const financialStatus = normalizeText(
+    optionalColumns.financialStatus ? rawRow[optionalColumns.financialStatus] : null
+  )
+  const cancelledAt = normalizeText(
+    optionalColumns.cancelledAt ? rawRow[optionalColumns.cancelledAt] : null
+  )
+  const orderId =
+    normalizeText(optionalColumns.orderId ? rawRow[optionalColumns.orderId] : null) ?? orderName
+  const estimatedUnitCost =
+    estimatedUnitCostRaw != null && Number.isFinite(estimatedUnitCostRaw)
+      ? Math.max(0, estimatedUnitCostRaw)
+      : null
+  const estimatedLineCost =
+    estimatedUnitCost != null ? round2(estimatedUnitCost * quantity) : null
 
-  for (let index = 0; index < maxColumnCount; index += 1) {
-    const original = headerRow[index] ?? ''
-    const fallback = `column_${index + 1}`
-    const baseName = sanitizeColumnKey(original) || fallback
-    const deduped = dedupeColumnName(baseName, taken)
-    columns.push(deduped)
-    taken.add(deduped)
+  const isCancelled =
+    Boolean(cancelledAt) ||
+    /\bcancel|void/.test((financialStatus ?? '').toLowerCase())
+  const isRefunded =
+    refundedAmount > 0 || /\brefund/.test((financialStatus ?? '').toLowerCase())
+
+  const createdAtIso = createdAt.toISOString()
+  const createdDate = createdAtIso.slice(0, 10)
+  const lineGrossUsd = convertCurrencyToUsd(lineGross, currency)
+  const refundedAmountUsd = convertCurrencyToUsd(refundedAmount, currency)
+  const orderTotalUsd =
+    orderTotal != null ? convertCurrencyToUsd(orderTotal, currency) : null
+  const estimatedLineCostUsd =
+    estimatedLineCost != null ? convertCurrencyToUsd(estimatedLineCost, currency) : null
+
+  const rowHash = createHash('sha256')
+    .update(
+      [
+        orderId,
+        createdDate,
+        sku ?? '',
+        lineitemName,
+        variantTitle ?? '',
+        String(quantity),
+        String(round2(unitPrice)),
+        String(round2(lineitemDiscount)),
+      ].join('|')
+    )
+    .digest('hex')
+
+  return {
+    orderId,
+    orderName,
+    createdAt: createdAtIso,
+    createdDate,
+    financialStatus: financialStatus ?? null,
+    currency,
+    lineitemSku: sku ?? null,
+    lineitemName,
+    variantTitle: variantTitle ?? null,
+    productName,
+    quantity,
+    unitPrice: round2(unitPrice),
+    lineDiscount: round2(lineitemDiscount),
+    lineGross: round2(lineGross),
+    lineGrossUsd,
+    refundedAmount: round2(refundedAmount),
+    refundedAmountUsd,
+    orderTotal: orderTotal != null ? round2(orderTotal) : null,
+    orderTotalUsd,
+    isCancelled,
+    isRefunded,
+    estimatedUnitCost: estimatedUnitCost != null ? round2(estimatedUnitCost) : null,
+    estimatedLineCost,
+    estimatedLineCostUsd,
+    rowHash,
   }
-
-  return columns
 }
 
-function buildDefaultColumns(maxColumnCount: number): string[] {
-  return Array.from({ length: maxColumnCount }, (_, index) => `column_${index + 1}`)
-}
-
-function sanitizeColumnKey(value: string): string {
-  return value
-    .trim()
-    .replace(/[\u0000-\u001f\u007f]/g, '')
-    .replace(/\s+/g, '_')
-    .replace(/[^A-Za-z0-9_]/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .toLowerCase()
-    .slice(0, 60)
-}
-
-function dedupeColumnName(base: string, taken: Set<string>): string {
-  if (!taken.has(base)) return base
-  let counter = 2
-  while (taken.has(`${base}_${counter}`)) {
-    counter += 1
-  }
-  return `${base}_${counter}`
-}
-
-function normalizeColumnKey(value: string): string {
+function normalizeHeaderKey(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]/g, '')
 }
 
-function normalizeCellValue(value: string): string | number | boolean | null {
-  const text = String(value ?? '').trim()
-  if (!text) return null
+function normalizeText(value: unknown): string | null {
+  if (value == null) {
+    return null
+  }
 
-  const lower = text.toLowerCase()
-  if (lower === 'true') return true
-  if (lower === 'false') return false
-
-  const numericValue = parseNumericValue(text)
-  if (numericValue != null) return numericValue
-
-  return text.slice(0, 10_000)
+  const text = String(value).trim()
+  return text.length > 0 ? text : null
 }
 
-function parseNumericValue(value: string): number | null {
-  if (!/[0-9]/.test(value)) return null
+function normalizeVariantTitle(value: unknown): string | null {
+  const text = normalizeText(value)
+  if (!text) {
+    return null
+  }
 
-  const hasParentheses = /^\((.+)\)$/.test(value)
-  let normalized = value.replace(/[()]/g, '')
+  const lowered = text.toLowerCase()
+  if (lowered === 'default title' || lowered === 'default') {
+    return null
+  }
+
+  return text
+}
+
+function normalizeCurrencyCode(value: unknown): string {
+  const fallback = 'USD'
+  const text = normalizeText(value)
+  if (!text) {
+    return fallback
+  }
+
+  const code = text.toUpperCase().slice(0, 3)
+  return /^[A-Z]{3}$/.test(code) ? code : fallback
+}
+
+function parseCurrencyNumber(value: unknown): number | null {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
+  }
+
+  const text = normalizeText(value)
+  if (!text) {
+    return null
+  }
+
+  const hasParentheses = /^\(.*\)$/.test(text)
+  let normalized = text.replace(/[()]/g, '')
   normalized = normalized.replace(/[\u2212\u2013\u2014]/g, '-')
-  normalized = normalized.replace(/[$,]/g, '')
-  normalized = normalized.replace(/\s+/g, '')
+  normalized = normalized.replace(/[^0-9,.\-]/g, '')
+
+  if (!normalized || normalized === '-' || normalized === '.' || normalized === ',') {
+    return null
+  }
+
+  if (normalized.includes(',') && normalized.includes('.')) {
+    if (normalized.lastIndexOf(',') > normalized.lastIndexOf('.')) {
+      normalized = normalized.replace(/\./g, '').replace(',', '.')
+    } else {
+      normalized = normalized.replace(/,/g, '')
+    }
+  } else if (normalized.includes(',')) {
+    normalized = normalized.replace(',', '.')
+  }
 
   const parsed = Number(normalized)
-  if (!Number.isFinite(parsed)) return null
+  if (!Number.isFinite(parsed)) {
+    return null
+  }
 
   return hasParentheses ? -Math.abs(parsed) : parsed
+}
+
+function parseShopifyDate(value: unknown): Date | null {
+  const text = normalizeText(value)
+  if (!text) {
+    return null
+  }
+
+  const direct = new Date(text)
+  if (!Number.isNaN(direct.getTime())) {
+    return direct
+  }
+
+  const dateMatch = text.match(
+    /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/
+  )
+
+  if (!dateMatch) {
+    return null
+  }
+
+  const first = Number(dateMatch[1])
+  const second = Number(dateMatch[2])
+  const year = Number(dateMatch[3])
+  const hours = Number(dateMatch[4] ?? '0')
+  const minutes = Number(dateMatch[5] ?? '0')
+  const seconds = Number(dateMatch[6] ?? '0')
+
+  const month = first > 12 ? second : first
+  const day = first > 12 ? first : second
+  const parsed = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds))
+
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+function convertCurrencyToUsd(amount: number, currency: string): number {
+  const rate = CURRENCY_TO_USD[currency] ?? 1
+  return round2(amount * rate)
+}
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100
 }

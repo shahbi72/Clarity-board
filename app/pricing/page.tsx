@@ -8,7 +8,7 @@ import { getCurrentUserIdentity } from '@/lib/server/auth'
 export const metadata: Metadata = {
   title: 'Pricing | Clarityboard',
   description:
-    'Compare Clarityboard Free, Basic, Pro, and Business plans for its subscription-based SaaS analytics and AI insights platform.',
+    'Single Shopify plan: 7-day free trial, then $25/month via Paddle.',
 }
 
 export default async function PricingPage() {
@@ -32,15 +32,14 @@ export default async function PricingPage() {
         <section className="mx-auto max-w-2xl text-center">
           <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Pricing</h1>
           <p className="mt-3 text-muted-foreground">
-            Clarityboard is a subscription-based SaaS platform for dashboards, analytics, and
-            AI-powered business insights.
+            Shopify Orders CSV clarity tool for small stores.
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Choose the plan that fits your reporting and decision workflow.
+            One simple plan. 7-day free trial, then $25/month.
           </p>
           <div className="mt-6">
             <Button asChild size="lg">
-              <Link href="/signup">Start free</Link>
+              <Link href="/signup">Start Free Trial</Link>
             </Button>
           </div>
         </section>

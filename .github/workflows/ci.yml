@@ -63,11 +63,11 @@ jobs:
             && pnpm -s run test \
             || echo "No test script; skipping"
 
-      - name: Run reports e2e tests (required gate)
+      - name: Run Shopify e2e tests (required gate)
         run: |
-          node -e "const s=require('./package.json').scripts||{}; process.exit(s['test:e2e:reports']?0:1)" \
-            && pnpm -s run test:e2e:reports \
-            || echo "No test:e2e:reports script; skipping"
+          node -e "const s=require('./package.json').scripts||{}; process.exit(s['test:e2e:shopify']?0:1)" \
+            && pnpm -s run test:e2e:shopify \
+            || echo "No test:e2e:shopify script; skipping"
 
       - name: Run legacy e2e tests (quarantined, non-blocking)
         continue-on-error: true

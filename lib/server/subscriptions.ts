@@ -12,6 +12,13 @@ import { prisma } from '@/lib/server/prisma'
 
 export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled' | 'paused'
 
+export type ShopifyBillingGate = {
+  allowed: boolean
+  reason: 'ok' | 'missing_subscription' | 'trial_expired' | 'inactive_subscription'
+  status: SubscriptionStatus | null
+  trialEndsAt: Date | null
+}
+
 export type SubscriptionRecord = {
   userId: string
   plan: PaidPlan
@@ -422,4 +429,71 @@ export function resolvePlanForTransaction({
   }
 
   return existingSubscription?.plan ?? null
+}
+
+export async function ensureShopifyTrialForUser(userId: string): Promise<SubscriptionRecord> {
+  const existing = await getSubscriptionForUser(userId)
+  if (existing) {
+    return existing
+  }
+
+  const now = new Date()
+  const trialEndsAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+
+  return upsertSubscriptionForUser({
+    userId,
+    plan: 'basic',
+    status: 'trialing',
+    trialEndsAt,
+  })
+}
+
+export async function getShopifyBillingGate(userId: string): Promise<ShopifyBillingGate> {
+  const subscription = await getSubscriptionForUser(userId)
+  if (!subscription) {
+    return {
+      allowed: false,
+      reason: 'missing_subscription',
+      status: null,
+      trialEndsAt: null,
+    }
+  }
+
+  const status = normalizeSubscriptionStatus(subscription.status)
+  const trialEndsAt = subscription.trialEndsAt
+  const now = new Date()
+
+  if (status === 'active') {
+    return {
+      allowed: true,
+      reason: 'ok',
+      status,
+      trialEndsAt,
+    }
+  }
+
+  if (status === 'trialing') {
+    if (trialEndsAt && trialEndsAt.getTime() < now.getTime()) {
+      return {
+        allowed: false,
+        reason: 'trial_expired',
+        status,
+        trialEndsAt,
+      }
+    }
+
+    return {
+      allowed: true,
+      reason: 'ok',
+      status,
+      trialEndsAt,
+    }
+  }
+
+  return {
+    allowed: false,
+    reason: 'inactive_subscription',
+    status,
+    trialEndsAt,
+  }
 }

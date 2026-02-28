@@ -1,17 +1,11 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Check } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import {
-  BUSINESS_PRICE_ID,
-  PRICE_ID_CONFIG,
-  PRO_PRICE_ID,
-  BASIC_PRICE_ID,
-  type PaidPlan,
-} from '@/lib/billing/plans'
+import { BASIC_PRICE_ID } from '@/lib/billing/plans'
 import { getPaddleInstance } from '@/lib/paddle/client'
 
 type PricingPlansProps = {
@@ -19,72 +13,25 @@ type PricingPlansProps = {
   userEmail: string | null
 }
 
-type PlanCard = {
-  name: 'Free' | 'Basic' | 'Pro' | 'Business'
-  plan: PaidPlan | 'free'
-  priceLabel: string
-  description: string
-  features: string[]
-  priceId: string | null
-  highlighted?: boolean
-}
-
-const PLAN_CARDS: PlanCard[] = [
-  {
-    name: 'Free',
-    plan: 'free',
-    priceLabel: '$0',
-    description: 'For trying Clarityboard before upgrading to premium.',
-    features: ['Core workspace access', 'Basic dashboard view', 'Limited in-app features'],
-    priceId: null,
-  },
-  {
-    name: 'Basic',
-    plan: 'basic',
-    priceLabel: '$19',
-    description: 'For individual operators running weekly analytics.',
-    features: ['Full dashboard access', 'Up to 3 datasets', 'AI insights (5 per month)'],
-    priceId: BASIC_PRICE_ID,
-  },
-  {
-    name: 'Pro',
-    plan: 'pro',
-    priceLabel: '$49',
-    description: 'For teams that need forecasting, exports, and full AI.',
-    features: ['Unlimited datasets', 'Unlimited AI insights', 'Exports and forecasting'],
-    priceId: PRO_PRICE_ID,
-    highlighted: true,
-  },
-  {
-    name: 'Business',
-    plan: 'business',
-    priceLabel: '$129',
-    description: 'For high-scale operations and upcoming multi-user controls.',
-    features: ['Everything in Pro', 'Business-grade workflows', 'Multi-user feature flag'],
-    priceId: BUSINESS_PRICE_ID,
-  },
+const FEATURES = [
+  'Shopify Orders CSV upload',
+  'Revenue, orders, AOV, units sold',
+  'Top 5 products by revenue',
+  '7-day / 30-day revenue trend',
 ]
 
 export function PricingPlans({ userId, userEmail }: PricingPlansProps) {
   const router = useRouter()
-  const [pendingPlan, setPendingPlan] = useState<PaidPlan | null>(null)
+  const [isOpeningCheckout, setIsOpeningCheckout] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   useEffect(() => {
     void getPaddleInstance().catch(() => {
-      // The checkout action surfaces detailed runtime errors when invoked.
+      // Checkout invocation handles runtime errors explicitly.
     })
   }, [])
 
-  const hasMissingPriceIds = useMemo(
-    () =>
-      !PRICE_ID_CONFIG.BASIC_PRICE_ID ||
-      !PRICE_ID_CONFIG.PRO_PRICE_ID ||
-      !PRICE_ID_CONFIG.BUSINESS_PRICE_ID,
-    []
-  )
-
-  const handleCheckout = async (plan: PaidPlan, priceId: string) => {
+  const handleCheckout = async () => {
     setCheckoutError(null)
 
     if (!userId) {
@@ -92,98 +39,71 @@ export function PricingPlans({ userId, userEmail }: PricingPlansProps) {
       return
     }
 
-    if (!priceId) {
-      setCheckoutError('This plan is not configured yet. Add the Paddle price ID env var.')
+    if (!BASIC_PRICE_ID) {
+      setCheckoutError('Missing NEXT_PUBLIC_PADDLE_PRICE_BASIC_ID configuration.')
       return
     }
 
-    setPendingPlan(plan)
+    setIsOpeningCheckout(true)
 
     try {
       const paddle = await getPaddleInstance()
       paddle.Checkout.open({
-        items: [{ priceId, quantity: 1 }],
+        items: [{ priceId: BASIC_PRICE_ID, quantity: 1 }],
         customer: userEmail ? { email: userEmail } : undefined,
         customData: {
           user_id: userId,
-          plan,
-          app: 'clarityboard',
-          env: process.env.NEXT_PUBLIC_PADDLE_ENV ?? 'sandbox',
+          plan: 'basic',
+          app: 'clarityboard-shopify',
         },
       })
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to open checkout.'
-      setCheckoutError(message)
+      setCheckoutError(error instanceof Error ? error.message : 'Unable to open Paddle checkout.')
     } finally {
-      setPendingPlan(null)
+      setIsOpeningCheckout(false)
     }
   }
 
   return (
-    <div className="space-y-4">
-      {hasMissingPriceIds ? (
-        <p className="rounded-lg border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-          Paddle price IDs are missing for one or more paid plans.
-        </p>
-      ) : null}
+    <section className="mx-auto mt-10 grid max-w-4xl gap-6">
+      <article className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-semibold">Shopify Plan</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              7-day free trial, then $25/month. Paddle billing.
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-4xl font-semibold tracking-tight">$25</p>
+            <p className="text-sm text-muted-foreground">per month</p>
+          </div>
+        </div>
 
-      {checkoutError ? (
-        <p className="rounded-lg border border-rose-300/50 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {checkoutError}
-        </p>
-      ) : null}
+        <ul className="mt-6 space-y-2">
+          {FEATURES.map((feature) => (
+            <li key={feature} className="flex items-start gap-2 text-sm">
+              <Check className="mt-0.5 h-4 w-4 text-primary" />
+              <span>{feature}</span>
+            </li>
+          ))}
+        </ul>
 
-      <section className="mx-auto mt-10 grid max-w-6xl gap-5 md:grid-cols-2 xl:grid-cols-4">
-        {PLAN_CARDS.map((plan) => {
-          const isPending = pendingPlan === plan.plan
-          const paidPlan = plan.plan === 'free' ? null : plan.plan
+        {checkoutError ? (
+          <p className="mt-4 rounded-lg border border-rose-300/50 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {checkoutError}
+          </p>
+        ) : null}
 
-          return (
-            <article
-              key={plan.name}
-              className={`rounded-xl border bg-card p-6 ${
-                plan.highlighted
-                  ? 'border-primary shadow-[0_0_0_1px_rgba(59,130,246,0.35)]'
-                  : 'border-border/80'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="text-xl font-semibold">{plan.name}</h2>
-                {plan.highlighted ? (
-                  <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
-                    Most Popular
-                  </span>
-                ) : null}
-              </div>
-              <p className="mt-2 text-3xl font-semibold">{plan.priceLabel}</p>
-              <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
-
-              <ul className="mt-5 space-y-2">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 text-sm">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              {!paidPlan ? (
-                <Button className="mt-6 w-full" variant="outline" asChild>
-                  <Link href="/signup">Start free</Link>
-                </Button>
-              ) : (
-                <Button
-                  className="mt-6 w-full"
-                  disabled={isPending || !plan.priceId}
-                  onClick={() => void handleCheckout(paidPlan, plan.priceId ?? '')}
-                >
-                  {isPending ? 'Opening checkout...' : 'Upgrade'}
-                </Button>
-              )}
-            </article>
-          )
-        })}
-      </section>
-    </div>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Button onClick={() => void handleCheckout()} disabled={isOpeningCheckout}>
+            {isOpeningCheckout ? 'Opening checkout...' : 'Start 7-day free trial'}
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/dashboard?demo=1">Try demo data first</Link>
+          </Button>
+        </div>
+      </article>
+    </section>
   )
 }

@@ -8,10 +8,8 @@ type PublicHeaderProps = {
 }
 
 const NAV_LINKS: Array<{ href: string; label: string }> = [
+  { href: '/dashboard?demo=1', label: 'Demo' },
   { href: '/pricing', label: 'Pricing' },
-  { href: '/terms', label: 'Terms' },
-  { href: '/privacy', label: 'Privacy' },
-  { href: '/refunds', label: 'Refunds' },
   { href: '/contact', label: 'Contact' },
 ]
 
@@ -44,7 +42,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
             <Link href="/login">Sign in</Link>
           </Button>
           <Button asChild size="sm">
-            <Link href="/signup">Start free</Link>
+            <Link href="/signup">Start Free Trial</Link>
           </Button>
         </div>
       </div>

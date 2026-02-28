@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation'
+import { ShopifyDashboardClient } from '@/components/shopify/shopify-dashboard-client'
 
-export default function DashboardLegacyPage() {
-  redirect('/app/dashboard')
+export default function DashboardPage() {
+  return <ShopifyDashboardClient />
 }

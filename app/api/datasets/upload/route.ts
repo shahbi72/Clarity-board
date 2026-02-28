@@ -3,16 +3,26 @@ import { getCurrentUserId } from '@/lib/server/auth'
 import { parseUploadedDatasetFile } from '@/lib/server/dataset-parser'
 import { createDatasetForUser } from '@/lib/server/datasets'
 import { getErrorMessage, HttpError } from '@/lib/server/http-error'
+import { ensureShopifyTrialForUser, getShopifyBillingGate } from '@/lib/server/subscriptions'
 import type { UploadDatasetResponse } from '@/lib/types/data-pipeline'
 
 export async function POST(request: Request) {
   try {
     const userId = await getCurrentUserId()
+    await ensureShopifyTrialForUser(userId)
+    const gate = await getShopifyBillingGate(userId)
+    if (!gate.allowed) {
+      throw new HttpError(
+        402,
+        'Trial expired or subscription inactive. Subscribe to keep using the Shopify dashboard.'
+      )
+    }
+
     const formData = await request.formData()
 
     const fileEntry = formData.get('file')
     if (!(fileEntry instanceof File)) {
-      throw new HttpError(400, 'A CSV or XLSX file is required.')
+      throw new HttpError(400, 'A Shopify Orders CSV file is required.')
     }
 
     const baseName = getFileBaseName(fileEntry.name)
