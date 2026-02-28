@@ -7,34 +7,151 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum ConnectionProvider {
+  GOOGLE
+}
+
+enum DatasetSourceType {
+  FILE_UPLOAD
+  GOOGLE_SHEET
+}
+
+enum SyncRunStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum SyncTrigger {
+  MANUAL
+  CRON
+  WEBHOOK
+}
+
+enum ReportStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum ReportType {
+  WEEKLY
+  MANUAL
+}
+
+enum SubscriptionProvider {
+  PADDLE
+}
+
 model User {
-  id              String    @id
+  id              String    @id @default(cuid())
   email           String?   @unique
   name            String?
+  image           String?
+  emailVerified   DateTime?
   activeDatasetId String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  datasets        Dataset[] @relation("UserDatasets")
-  activeDataset   Dataset?  @relation("ActiveDataset", fields: [activeDatasetId], references: [id])
+
+  datasets              Dataset[]         @relation("UserDatasets")
+  activeDataset         Dataset?          @relation("ActiveDataset", fields: [activeDatasetId], references: [id], onDelete: SetNull)
+  accounts              Account[]
+  sessions              Session[]
+  connections           Connection[]
+  sheetSources          SheetSource[]
+  syncRuns              SyncRun[]
+  rowHashes             RowHash[]
+  cleanTables           CleanTable[]
+  kpiMappings           KpiMapping[]
+  reports               Report[]
+  reportSchedules       ReportSchedule[]
+  auditLogs             AuditLog[]
+  memberships           WorkspaceMember[]
+  ownedWorkspaces       Workspace[]       @relation("WorkspaceOwner")
+  profile               Profile?
+  subscription          Subscription?
+  aiInsightUsageEntries AiInsightUsage[]
 
   @@index([activeDatasetId])
 }
 
+model Workspace {
+  id                 String   @id @default(cuid())
+  name               String
+  slug               String?  @unique
+  ownerId            String
+  brandingLogoUrl    String?
+  defaultReportEmail String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  owner           User              @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members         WorkspaceMember[]
+  datasets        Dataset[]
+  connections     Connection[]
+  sheetSources    SheetSource[]
+  syncRuns        SyncRun[]
+  rowHashes       RowHash[]
+  cleanTables     CleanTable[]
+  kpiMappings     KpiMapping[]
+  reports         Report[]
+  reportSchedules ReportSchedule[]
+  auditLogs       AuditLog[]
+  subscriptions   Subscription[]
+
+  @@index([ownerId])
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(MEMBER)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
 model Dataset {
-  id             String       @id @default(cuid())
-  userId         String
-  name           String
-  fileType       String
-  sizeBytes      Int
-  rowCount       Int
-  columns        Json
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id            String            @id @default(cuid())
+  userId        String
+  workspaceId   String?
+  name          String
+  fileType      String
+  sourceType    DatasetSourceType @default(FILE_UPLOAD)
+  sizeBytes     Int
+  rowCount      Int
+  columns       Json
+  sheetSourceId String?           @unique
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
   user           User         @relation("UserDatasets", fields: [userId], references: [id], onDelete: Cascade)
+  workspace      Workspace?   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sheetSource    SheetSource?
   rows           DatasetRow[]
   activeForUsers User[]       @relation("ActiveDataset")
+  syncRuns       SyncRun[]
+  rowHashes      RowHash[]
+  cleanTable     CleanTable?
+  kpiMapping     KpiMapping?
+  reports        Report[]
 
   @@index([userId, updatedAt])
+  @@index([workspaceId, updatedAt])
 }
 
 model DatasetRow {
@@ -43,10 +160,223 @@ model DatasetRow {
   rowIndex  Int
   data      Json
   createdAt DateTime @default(now())
-  dataset   Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  dataset Dataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
 
   @@unique([datasetId, rowIndex])
   @@index([datasetId, rowIndex])
+}
+
+model Connection {
+  id                    String             @id @default(cuid())
+  workspaceId           String
+  userId                String
+  provider              ConnectionProvider
+  encryptedAccessToken  String?            @db.Text
+  encryptedRefreshToken String?            @db.Text
+  accessTokenExpiresAt  DateTime?
+  scope                 String?
+  googleAccountEmail    String?
+  disconnectedAt        DateTime?
+  revokedAt             DateTime?
+  lastUsedAt            DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sheetSources SheetSource[]
+
+  @@unique([workspaceId, provider])
+  @@index([userId, provider])
+}
+
+model SheetSource {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  userId          String
+  connectionId    String
+  datasetId       String?   @unique
+  spreadsheetId   String
+  spreadsheetName String
+  sheetId         Int?
+  sheetName       String
+  headerRowIndex  Int?
+  isActive        Boolean   @default(true)
+  lastSyncedAt    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connection      Connection       @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  dataset         Dataset?         @relation(fields: [datasetId], references: [id], onDelete: SetNull)
+  syncRuns        SyncRun[]
+  reports         Report[]
+  reportSchedules ReportSchedule[]
+
+  @@unique([workspaceId, spreadsheetId, sheetName])
+  @@index([userId, isActive])
+}
+
+model SyncRun {
+  id            String        @id @default(cuid())
+  workspaceId   String
+  userId        String
+  sheetSourceId String
+  datasetId     String
+  status        SyncRunStatus @default(PENDING)
+  triggeredBy   SyncTrigger   @default(MANUAL)
+  startedAt     DateTime      @default(now())
+  finishedAt    DateTime?
+  rawSnapshot   Json?
+  rowsFetched   Int           @default(0)
+  rowsCleaned   Int           @default(0)
+  rowsInserted  Int           @default(0)
+  rowsUpdated   Int           @default(0)
+  rowsSkipped   Int           @default(0)
+  errorMessage  String?       @db.Text
+  createdAt     DateTime      @default(now())
+
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sheetSource SheetSource @relation(fields: [sheetSourceId], references: [id], onDelete: Cascade)
+  dataset     Dataset     @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, startedAt])
+  @@index([sheetSourceId, startedAt])
+}
+
+model RowHash {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  userId        String
+  datasetId     String
+  rowKey        String
+  rowHash       String
+  normalizedRow Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dataset   Dataset   @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@unique([datasetId, rowKey])
+  @@index([workspaceId, datasetId])
+}
+
+model CleanTable {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  userId         String
+  datasetId      String   @unique
+  tableName      String
+  schemaJson     Json
+  rowsJson       Json
+  rowCount       Int      @default(0)
+  duplicateCount Int      @default(0)
+  typeConfidence Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dataset   Dataset   @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, userId])
+}
+
+model KpiMapping {
+  id                   String   @id @default(cuid())
+  workspaceId          String
+  userId               String
+  datasetId            String   @unique
+  dateColumn           String?
+  revenueColumn        String?
+  costColumn           String?
+  ordersColumn         String?
+  profitColumn         String?
+  conversionRateColumn String?
+  inferenceConfidence  Json
+  isOverridden         Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dataset   Dataset   @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, userId])
+}
+
+model Report {
+  id             String       @id @default(cuid())
+  workspaceId    String
+  userId         String
+  datasetId      String?
+  sheetSourceId  String?
+  status         ReportStatus @default(PENDING)
+  reportType     ReportType   @default(WEEKLY)
+  scheduledFor   DateTime?
+  sentAt         DateTime?
+  recipientEmail String
+  subject        String
+  pdfStoragePath String?
+  errorMessage   String?      @db.Text
+  kpiSnapshot    Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dataset     Dataset?     @relation(fields: [datasetId], references: [id], onDelete: SetNull)
+  sheetSource SheetSource? @relation(fields: [sheetSourceId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, scheduledFor])
+  @@index([userId, createdAt])
+}
+
+model ReportSchedule {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  userId         String
+  sheetSourceId  String?
+  enabled        Boolean   @default(true)
+  dayOfWeek      Int       @default(1)
+  timeOfDay      String    @default("09:00")
+  timezone       String    @default("Europe/Istanbul")
+  recipientEmail String?
+  lastRunAt      DateTime?
+  nextRunAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sheetSource SheetSource? @relation(fields: [sheetSourceId], references: [id], onDelete: SetNull)
+
+  @@unique([workspaceId, userId])
+  @@index([enabled, nextRunAt])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  workspaceId  String?
+  userId       String?
+  action       String
+  resourceType String
+  resourceId   String?
+  metadata     Json?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([userId, createdAt])
 }
 
 model Profile {
@@ -60,22 +390,49 @@ model Profile {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("profiles")
 }
 
 model Subscription {
-  userId               String    @id @map("user_id")
+  userId               String               @id @map("user_id")
+  workspaceId          String?
   plan                 String
-  paddleCustomerId     String?   @map("paddle_customer_id")
-  paddleSubscriptionId String?   @map("paddle_subscription_id")
+  paddleCustomerId     String?              @map("paddle_customer_id")
+  paddleSubscriptionId String?              @map("paddle_subscription_id")
+  provider             SubscriptionProvider @default(PADDLE)
   status               String
-  planPriceId          String?   @map("plan_price_id")
-  currentPeriodEnd     DateTime? @map("current_period_end")
-  updatedAt            DateTime  @updatedAt @map("updated_at")
+  planPriceId          String?              @map("plan_price_id")
+  trialEndsAt          DateTime?            @map("trial_ends_at")
+  currentPeriodEnd     DateTime?            @map("current_period_end")
+  canceledAt           DateTime?            @map("canceled_at")
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
 
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@unique([workspaceId])
   @@index([paddleCustomerId])
   @@index([paddleSubscriptionId])
   @@map("subscriptions")
+}
+
+model BillingEventLog {
+  id           String               @id @default(cuid())
+  provider     SubscriptionProvider
+  eventId      String
+  eventType    String
+  payloadHash  String?
+  status       String               @default("processing")
+  errorMessage String?              @db.Text
+  processedAt  DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@unique([provider, eventId])
+  @@index([provider, createdAt])
 }
 
 model AiInsightUsage {
@@ -85,7 +442,49 @@ model AiInsightUsage {
   usedCount Int      @default(0) @map("used_count")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([userId, monthKey])
   @@index([userId])
   @@map("ai_insight_usage")
 }
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+

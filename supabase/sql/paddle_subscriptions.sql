@@ -3,11 +3,15 @@
 create table if not exists public.subscriptions (
   user_id uuid primary key references auth.users (id) on delete cascade,
   plan text not null check (plan in ('basic', 'pro', 'business')),
-  plan_price_id text not null,
+  plan_price_id text,
+  provider text not null default 'PADDLE' check (provider = 'PADDLE'),
   status text not null check (status in ('active', 'trialing', 'past_due', 'canceled', 'paused')),
   paddle_customer_id text,
   paddle_subscription_id text,
+  trial_ends_at timestamptz,
   current_period_end timestamptz,
+  canceled_at timestamptz,
+  created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
@@ -21,6 +25,22 @@ create unique index if not exists subscriptions_paddle_subscription_id_key
 
 create index if not exists subscriptions_status_idx
   on public.subscriptions (status);
+
+create table if not exists public.billing_event_logs (
+  id text primary key,
+  provider text not null check (provider = 'PADDLE'),
+  event_id text not null,
+  event_type text not null,
+  payload_hash text,
+  status text not null default 'processing',
+  error_message text,
+  processed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists billing_event_logs_provider_event_id_key
+  on public.billing_event_logs (provider, event_id);
 
 alter table public.subscriptions enable row level security;
 

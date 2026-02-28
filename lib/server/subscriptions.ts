@@ -9,7 +9,6 @@ import {
 import { getCurrentUserId } from '@/lib/server/auth'
 import { HttpError } from '@/lib/server/http-error'
 import { prisma } from '@/lib/server/prisma'
-import { getSupabaseServiceRoleClient } from '@/lib/supabase/admin'
 
 export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled' | 'paused'
 
@@ -18,14 +17,15 @@ export type SubscriptionRecord = {
   plan: PaidPlan
   planPriceId: string | null
   status: SubscriptionStatus
+  provider: 'PADDLE'
   paddleCustomerId: string | null
   paddleSubscriptionId: string | null
+  trialEndsAt: Date | null
   currentPeriodEnd: Date | null
   updatedAt: Date
 }
 
 const ACTIVE_SUBSCRIPTION_STATUSES = new Set<SubscriptionStatus>(['active', 'trialing'])
-
 const BASIC_MONTHLY_AI_INSIGHTS_LIMIT = 5
 
 type UpsertSubscriptionInput = {
@@ -35,36 +35,9 @@ type UpsertSubscriptionInput = {
   status: SubscriptionStatus | string
   paddleCustomerId?: string | null
   paddleSubscriptionId?: string | null
+  trialEndsAt?: Date | null
   currentPeriodEnd?: Date | null
-}
-
-type SubscriptionRow = {
-  user_id: string
-  plan: string
-  plan_price_id: string | null
-  status: string
-  paddle_customer_id: string | null
-  paddle_subscription_id: string | null
-  current_period_end: string | null
-  updated_at: string | null
-}
-
-function mapRowToRecord(row: SubscriptionRow): SubscriptionRecord | null {
-  const plan = normalizePaidPlan(row.plan)
-  if (!plan) {
-    return null
-  }
-
-  return {
-    userId: row.user_id,
-    plan,
-    planPriceId: row.plan_price_id,
-    status: normalizeSubscriptionStatus(row.status),
-    paddleCustomerId: row.paddle_customer_id,
-    paddleSubscriptionId: row.paddle_subscription_id,
-    currentPeriodEnd: parsePaddleDate(row.current_period_end),
-    updatedAt: parsePaddleDate(row.updated_at) ?? new Date(),
-  }
+  canceledAt?: Date | null
 }
 
 function getCurrentMonthKey(now = new Date()): string {
@@ -73,12 +46,12 @@ function getCurrentMonthKey(now = new Date()): string {
   return `${year}-${month}`
 }
 
-function toIsoDateTime(value: Date | null | undefined): string | null {
-  if (!value) {
-    return null
+function normalizePlanForStorage(value: string | null | undefined): PaidPlan | null {
+  const normalized = value?.trim().toLowerCase() ?? ''
+  if (normalized === 'starter') {
+    return 'basic'
   }
-
-  return value.toISOString()
+  return normalizePaidPlan(normalized)
 }
 
 export function normalizeSubscriptionStatus(value: string | null | undefined): SubscriptionStatus {
@@ -89,10 +62,12 @@ export function normalizeSubscriptionStatus(value: string | null | undefined): S
     case 'completed':
     case 'paid':
     case 'billed':
+    case 'payment_succeeded':
       return 'active'
     case 'trialing':
       return 'trialing'
     case 'past_due':
+    case 'payment_failed':
       return 'past_due'
     case 'paused':
       return 'paused'
@@ -134,36 +109,63 @@ export function resolveEffectivePlan(subscription: SubscriptionRecord | null): E
   return subscription.plan
 }
 
+function mapPrismaRowToRecord(row: {
+  userId: string
+  plan: string
+  planPriceId: string | null
+  status: string
+  provider: string
+  paddleCustomerId: string | null
+  paddleSubscriptionId: string | null
+  trialEndsAt: Date | null
+  currentPeriodEnd: Date | null
+  updatedAt: Date
+}): SubscriptionRecord | null {
+  const plan = normalizePlanForStorage(row.plan)
+  if (!plan) {
+    return null
+  }
+
+  if (row.provider !== 'PADDLE') {
+    return null
+  }
+
+  return {
+    userId: row.userId,
+    plan,
+    planPriceId: row.planPriceId,
+    status: normalizeSubscriptionStatus(row.status),
+    provider: 'PADDLE',
+    paddleCustomerId: row.paddleCustomerId,
+    paddleSubscriptionId: row.paddleSubscriptionId,
+    trialEndsAt: row.trialEndsAt,
+    currentPeriodEnd: row.currentPeriodEnd,
+    updatedAt: row.updatedAt,
+  }
+}
+
 export async function getSubscriptionForUser(userId: string): Promise<SubscriptionRecord | null> {
-  let supabase
+  const row = await prisma.subscription.findUnique({
+    where: { userId },
+    select: {
+      userId: true,
+      plan: true,
+      planPriceId: true,
+      status: true,
+      provider: true,
+      paddleCustomerId: true,
+      paddleSubscriptionId: true,
+      trialEndsAt: true,
+      currentPeriodEnd: true,
+      updatedAt: true,
+    },
+  })
 
-  try {
-    supabase = getSupabaseServiceRoleClient()
-  } catch {
+  if (!row) {
     return null
   }
 
-  const { data, error } = await supabase
-    .from('subscriptions')
-    .select(
-      'user_id, plan, plan_price_id, status, paddle_customer_id, paddle_subscription_id, current_period_end, updated_at'
-    )
-    .eq('user_id', userId)
-    .maybeSingle<SubscriptionRow>()
-
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return null
-    }
-
-    throw new HttpError(500, error.message)
-  }
-
-  if (!data) {
-    return null
-  }
-
-  return mapRowToRecord(data)
+  return mapPrismaRowToRecord(row)
 }
 
 export async function getCurrentUserSubscription(): Promise<SubscriptionRecord | null> {
@@ -283,36 +285,56 @@ export async function upsertSubscriptionForUser({
   status,
   paddleCustomerId,
   paddleSubscriptionId,
+  trialEndsAt,
   currentPeriodEnd,
+  canceledAt,
 }: UpsertSubscriptionInput): Promise<SubscriptionRecord> {
-  const supabase = getSupabaseServiceRoleClient()
-
-  const payload = {
-    user_id: userId,
-    plan,
-    plan_price_id: planPriceId ?? null,
-    status: normalizeSubscriptionStatus(status),
-    paddle_customer_id: paddleCustomerId ?? null,
-    paddle_subscription_id: paddleSubscriptionId ?? null,
-    current_period_end: toIsoDateTime(currentPeriodEnd),
-    updated_at: new Date().toISOString(),
+  const normalizedPlan = normalizePlanForStorage(plan)
+  if (!normalizedPlan) {
+    throw new HttpError(400, 'Invalid plan value for subscription update.')
   }
 
-  const { data, error } = await supabase
-    .from('subscriptions')
-    .upsert(payload, {
-      onConflict: 'user_id',
-    })
-    .select(
-      'user_id, plan, plan_price_id, status, paddle_customer_id, paddle_subscription_id, current_period_end, updated_at'
-    )
-    .single<SubscriptionRow>()
+  const row = await prisma.subscription.upsert({
+    where: { userId },
+    update: {
+      workspaceId: undefined,
+      provider: 'PADDLE',
+      plan: normalizedPlan,
+      planPriceId: planPriceId ?? null,
+      status: normalizeSubscriptionStatus(status),
+      paddleCustomerId: paddleCustomerId ?? null,
+      paddleSubscriptionId: paddleSubscriptionId ?? null,
+      trialEndsAt: trialEndsAt ?? undefined,
+      currentPeriodEnd: currentPeriodEnd ?? null,
+      canceledAt: canceledAt ?? null,
+    },
+    create: {
+      userId,
+      provider: 'PADDLE',
+      plan: normalizedPlan,
+      planPriceId: planPriceId ?? null,
+      status: normalizeSubscriptionStatus(status),
+      paddleCustomerId: paddleCustomerId ?? null,
+      paddleSubscriptionId: paddleSubscriptionId ?? null,
+      trialEndsAt: trialEndsAt ?? null,
+      currentPeriodEnd: currentPeriodEnd ?? null,
+      canceledAt: canceledAt ?? null,
+    },
+    select: {
+      userId: true,
+      plan: true,
+      planPriceId: true,
+      status: true,
+      provider: true,
+      paddleCustomerId: true,
+      paddleSubscriptionId: true,
+      trialEndsAt: true,
+      currentPeriodEnd: true,
+      updatedAt: true,
+    },
+  })
 
-  if (error) {
-    throw new HttpError(500, error.message)
-  }
-
-  const mapped = mapRowToRecord(data)
+  const mapped = mapPrismaRowToRecord(row)
   if (!mapped) {
     throw new HttpError(500, 'Unable to map subscription row.')
   }
@@ -327,41 +349,53 @@ export async function findSubscriptionByPaddleIdentifiers({
   paddleCustomerId?: string | null
   paddleSubscriptionId?: string | null
 }): Promise<SubscriptionRecord | null> {
-  const supabase = getSupabaseServiceRoleClient()
-
   if (paddleSubscriptionId && paddleSubscriptionId.trim().length > 0) {
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .select(
-        'user_id, plan, plan_price_id, status, paddle_customer_id, paddle_subscription_id, current_period_end, updated_at'
-      )
-      .eq('paddle_subscription_id', paddleSubscriptionId.trim())
-      .maybeSingle<SubscriptionRow>()
+    const bySubscription = await prisma.subscription.findFirst({
+      where: {
+        provider: 'PADDLE',
+        paddleSubscriptionId: paddleSubscriptionId.trim(),
+      },
+      select: {
+        userId: true,
+        plan: true,
+        planPriceId: true,
+        status: true,
+        provider: true,
+        paddleCustomerId: true,
+        paddleSubscriptionId: true,
+        trialEndsAt: true,
+        currentPeriodEnd: true,
+        updatedAt: true,
+      },
+    })
 
-    if (error && error.code !== 'PGRST116') {
-      throw new HttpError(500, error.message)
-    }
-
-    if (data) {
-      return mapRowToRecord(data)
+    if (bySubscription) {
+      return mapPrismaRowToRecord(bySubscription)
     }
   }
 
   if (paddleCustomerId && paddleCustomerId.trim().length > 0) {
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .select(
-        'user_id, plan, plan_price_id, status, paddle_customer_id, paddle_subscription_id, current_period_end, updated_at'
-      )
-      .eq('paddle_customer_id', paddleCustomerId.trim())
-      .maybeSingle<SubscriptionRow>()
+    const byCustomer = await prisma.subscription.findFirst({
+      where: {
+        provider: 'PADDLE',
+        paddleCustomerId: paddleCustomerId.trim(),
+      },
+      select: {
+        userId: true,
+        plan: true,
+        planPriceId: true,
+        status: true,
+        provider: true,
+        paddleCustomerId: true,
+        paddleSubscriptionId: true,
+        trialEndsAt: true,
+        currentPeriodEnd: true,
+        updatedAt: true,
+      },
+    })
 
-    if (error && error.code !== 'PGRST116') {
-      throw new HttpError(500, error.message)
-    }
-
-    if (data) {
-      return mapRowToRecord(data)
+    if (byCustomer) {
+      return mapPrismaRowToRecord(byCustomer)
     }
   }
 
@@ -377,7 +411,7 @@ export function resolvePlanForTransaction({
   planPriceId?: string | null
   existingSubscription?: SubscriptionRecord | null
 }): PaidPlan | null {
-  const planFromCustomData = normalizePaidPlan(explicitPlan)
+  const planFromCustomData = normalizePlanForStorage(explicitPlan)
   if (planFromCustomData) {
     return planFromCustomData
   }

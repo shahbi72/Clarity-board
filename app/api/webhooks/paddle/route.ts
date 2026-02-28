@@ -1,5 +1,6 @@
-import { createHmac, timingSafeEqual } from 'crypto'
+import { createHash, createHmac, timingSafeEqual } from 'crypto'
 import { NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import {
   findSubscriptionByPaddleIdentifiers,
   mapPaddleTransactionStatus,
@@ -7,15 +8,18 @@ import {
   resolvePlanForTransaction,
   upsertSubscriptionForUser,
 } from '@/lib/server/subscriptions'
+import { prisma } from '@/lib/server/prisma'
 
 export const runtime = 'nodejs'
 
 type PaddleWebhookPayload = {
+  event_id?: string
   event_type?: string
-  data?: PaddleTransactionData
+  data?: PaddleBillingData
 }
 
-type PaddleTransactionData = {
+type PaddleBillingData = {
+  id?: string | null
   status?: string | null
   customer_id?: string | null
   subscription_id?: string | null
@@ -24,9 +28,16 @@ type PaddleTransactionData = {
   } | null
   subscription?: {
     id?: string | null
+    status?: string | null
   } | null
   custom_data?: Record<string, unknown> | null
   billing_period?: {
+    ends_at?: string | null
+  } | null
+  current_billing_period?: {
+    ends_at?: string | null
+  } | null
+  trial_dates?: {
     ends_at?: string | null
   } | null
   items?: Array<{
@@ -132,11 +143,7 @@ function isValidSignature({
 }
 
 function extractUserId(customData: Record<string, unknown> | null | undefined): string | null {
-  if (!customData) {
-    return null
-  }
-
-  const rawUserId = customData.user_id
+  const rawUserId = customData?.user_id
   if (typeof rawUserId !== 'string') {
     return null
   }
@@ -146,11 +153,7 @@ function extractUserId(customData: Record<string, unknown> | null | undefined): 
 }
 
 function extractPlan(customData: Record<string, unknown> | null | undefined): string | null {
-  if (!customData) {
-    return null
-  }
-
-  const rawPlan = customData.plan
+  const rawPlan = customData?.plan
   if (typeof rawPlan !== 'string') {
     return null
   }
@@ -159,7 +162,7 @@ function extractPlan(customData: Record<string, unknown> | null | undefined): st
   return normalized.length > 0 ? normalized : null
 }
 
-function extractPlanPriceId(items: PaddleTransactionData['items']): string | null {
+function extractPlanPriceId(items: PaddleBillingData['items']): string | null {
   if (!items || items.length === 0) {
     return null
   }
@@ -174,13 +177,13 @@ function extractPlanPriceId(items: PaddleTransactionData['items']): string | nul
   return null
 }
 
-function extractCustomerId(transaction: PaddleTransactionData): string | null {
-  const directId = transaction.customer_id
+function extractCustomerId(data: PaddleBillingData): string | null {
+  const directId = data.customer_id
   if (typeof directId === 'string' && directId.trim().length > 0) {
     return directId.trim()
   }
 
-  const nestedId = transaction.customer?.id
+  const nestedId = data.customer?.id
   if (typeof nestedId === 'string' && nestedId.trim().length > 0) {
     return nestedId.trim()
   }
@@ -188,13 +191,13 @@ function extractCustomerId(transaction: PaddleTransactionData): string | null {
   return null
 }
 
-function extractSubscriptionId(transaction: PaddleTransactionData): string | null {
-  const directId = transaction.subscription_id
+function extractSubscriptionId(data: PaddleBillingData): string | null {
+  const directId = data.subscription_id
   if (typeof directId === 'string' && directId.trim().length > 0) {
     return directId.trim()
   }
 
-  const nestedId = transaction.subscription?.id
+  const nestedId = data.subscription?.id ?? data.id
   if (typeof nestedId === 'string' && nestedId.trim().length > 0) {
     return nestedId.trim()
   }
@@ -202,20 +205,27 @@ function extractSubscriptionId(transaction: PaddleTransactionData): string | nul
   return null
 }
 
-async function resolveTransactionContext(transaction: PaddleTransactionData) {
-  const customData = transaction.custom_data ?? null
-  const paddleCustomerId = extractCustomerId(transaction)
-  const paddleSubscriptionId = extractSubscriptionId(transaction)
+function extractPeriodEnd(data: PaddleBillingData): Date | null {
+  return (
+    parsePaddleDate(data.billing_period?.ends_at) ??
+    parsePaddleDate(data.current_billing_period?.ends_at) ??
+    parsePaddleDate(data.trial_dates?.ends_at)
+  )
+}
+
+async function resolveBillingContext(data: PaddleBillingData) {
+  const paddleCustomerId = extractCustomerId(data)
+  const paddleSubscriptionId = extractSubscriptionId(data)
 
   const existingSubscription = await findSubscriptionByPaddleIdentifiers({
     paddleCustomerId,
     paddleSubscriptionId,
   })
 
-  const userId = extractUserId(customData) ?? existingSubscription?.userId ?? null
-  const planPriceId = extractPlanPriceId(transaction.items) ?? existingSubscription?.planPriceId ?? null
+  const userId = extractUserId(data.custom_data ?? null) ?? existingSubscription?.userId ?? null
+  const planPriceId = extractPlanPriceId(data.items) ?? existingSubscription?.planPriceId ?? null
   const plan = resolvePlanForTransaction({
-    explicitPlan: extractPlan(customData),
+    explicitPlan: extractPlan(data.custom_data ?? null),
     planPriceId,
     existingSubscription,
   })
@@ -230,47 +240,154 @@ async function resolveTransactionContext(transaction: PaddleTransactionData) {
   }
 }
 
-async function handleTransactionCompleted(transaction: PaddleTransactionData) {
-  const context = await resolveTransactionContext(transaction)
+function statusFromEvent(eventType: string, data: PaddleBillingData): string {
+  const lowered = eventType.toLowerCase()
+
+  if (lowered === 'transaction.completed' || lowered === 'payment.succeeded') {
+    return 'active'
+  }
+
+  if (lowered === 'payment.failed') {
+    return 'past_due'
+  }
+
+  if (lowered === 'subscription.canceled' || lowered === 'subscription.cancelled') {
+    return 'canceled'
+  }
+
+  if (lowered === 'subscription.paused') {
+    return 'paused'
+  }
+
+  if (typeof data.status === 'string' && data.status.trim().length > 0) {
+    return data.status
+  }
+
+  if (typeof data.subscription?.status === 'string' && data.subscription.status.trim().length > 0) {
+    return data.subscription.status
+  }
+
+  return 'active'
+}
+
+async function applySubscriptionMutation(eventType: string, data: PaddleBillingData): Promise<void> {
+  const context = await resolveBillingContext(data)
   if (!context.userId || !context.plan) {
     return
   }
 
+  const normalizedStatus = mapPaddleTransactionStatus(statusFromEvent(eventType, data))
+  const periodEnd = extractPeriodEnd(data) ?? context.existingSubscription?.currentPeriodEnd ?? null
+
   await upsertSubscriptionForUser({
     userId: context.userId,
     plan: context.plan,
-    status: 'active',
+    status: normalizedStatus,
     planPriceId: context.planPriceId,
     paddleCustomerId: context.paddleCustomerId ?? context.existingSubscription?.paddleCustomerId ?? null,
     paddleSubscriptionId:
       context.paddleSubscriptionId ?? context.existingSubscription?.paddleSubscriptionId ?? null,
-    currentPeriodEnd:
-      parsePaddleDate(transaction.billing_period?.ends_at) ??
-      context.existingSubscription?.currentPeriodEnd ??
-      null,
+    trialEndsAt: normalizedStatus === 'trialing' ? periodEnd : context.existingSubscription?.trialEndsAt,
+    currentPeriodEnd: periodEnd,
+    canceledAt: normalizedStatus === 'canceled' ? new Date() : null,
   })
 }
 
-async function handleTransactionUpdated(transaction: PaddleTransactionData) {
-  const context = await resolveTransactionContext(transaction)
-  if (!context.userId || !context.plan) {
-    return
+function isProcessableBillingEvent(eventType: string): boolean {
+  switch (eventType) {
+    case 'transaction.completed':
+    case 'transaction.updated':
+    case 'subscription.created':
+    case 'subscription.updated':
+    case 'subscription.canceled':
+    case 'subscription.cancelled':
+    case 'subscription.paused':
+    case 'payment.succeeded':
+    case 'payment.failed':
+      return true
+    default:
+      return false
   }
+}
 
-  const hasBillingPeriodEnd = transaction.billing_period?.ends_at !== undefined
-  const currentPeriodEnd = hasBillingPeriodEnd
-    ? parsePaddleDate(transaction.billing_period?.ends_at)
-    : context.existingSubscription?.currentPeriodEnd ?? null
+async function beginEventProcessing(params: {
+  provider: 'PADDLE'
+  eventId: string
+  eventType: string
+  payloadHash: string
+}): Promise<'process' | 'skip'> {
+  try {
+    await prisma.billingEventLog.create({
+      data: {
+        provider: params.provider,
+        eventId: params.eventId,
+        eventType: params.eventType,
+        payloadHash: params.payloadHash,
+        status: 'processing',
+      },
+    })
+    return 'process'
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      const existing = await prisma.billingEventLog.findUnique({
+        where: {
+          provider_eventId: {
+            provider: params.provider,
+            eventId: params.eventId,
+          },
+        },
+        select: {
+          status: true,
+        },
+      })
 
-  await upsertSubscriptionForUser({
-    userId: context.userId,
-    plan: context.plan,
-    status: mapPaddleTransactionStatus(transaction.status),
-    planPriceId: context.planPriceId,
-    paddleCustomerId: context.paddleCustomerId ?? context.existingSubscription?.paddleCustomerId ?? null,
-    paddleSubscriptionId:
-      context.paddleSubscriptionId ?? context.existingSubscription?.paddleSubscriptionId ?? null,
-    currentPeriodEnd,
+      if (existing?.status === 'processed' || existing?.status === 'processing') {
+        return 'skip'
+      }
+
+      await prisma.billingEventLog.update({
+        where: {
+          provider_eventId: {
+            provider: params.provider,
+            eventId: params.eventId,
+          },
+        },
+        data: {
+          status: 'processing',
+          errorMessage: null,
+          payloadHash: params.payloadHash,
+          eventType: params.eventType,
+        },
+      })
+
+      return 'process'
+    }
+
+    throw error
+  }
+}
+
+async function finishEvent(params: {
+  provider: 'PADDLE'
+  eventId: string
+  status: 'processed' | 'failed'
+  errorMessage?: string | null
+}) {
+  await prisma.billingEventLog.update({
+    where: {
+      provider_eventId: {
+        provider: params.provider,
+        eventId: params.eventId,
+      },
+    },
+    data: {
+      status: params.status,
+      errorMessage: params.errorMessage ?? null,
+      processedAt: params.status === 'processed' ? new Date() : null,
+    },
   })
 }
 
@@ -301,18 +418,48 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid JSON payload.' }, { status: 400 })
   }
 
-  const eventType = payload.event_type
-  const transaction = payload.data
+  const eventType = payload.event_type?.trim() ?? ''
+  const data = payload.data
 
-  if (!eventType || !transaction) {
+  if (!eventType || !data) {
+    return NextResponse.json({ ok: true, ignored: true })
+  }
+
+  const eventId =
+    payload.event_id?.trim() || createHash('sha256').update(`${eventType}:${rawBody}`).digest('hex')
+  const payloadHash = createHash('sha256').update(rawBody).digest('hex')
+
+  const action = await beginEventProcessing({
+    provider: 'PADDLE',
+    eventId,
+    eventType,
+    payloadHash,
+  })
+
+  if (action === 'skip') {
+    return NextResponse.json({ ok: true, duplicate: true })
+  }
+
+  try {
+    if (isProcessableBillingEvent(eventType)) {
+      await applySubscriptionMutation(eventType, data)
+    }
+
+    await finishEvent({
+      provider: 'PADDLE',
+      eventId,
+      status: 'processed',
+    })
+
     return NextResponse.json({ ok: true })
-  }
+  } catch (error) {
+    await finishEvent({
+      provider: 'PADDLE',
+      eventId,
+      status: 'failed',
+      errorMessage: error instanceof Error ? error.message : 'unknown_error',
+    })
 
-  if (eventType === 'transaction.completed') {
-    await handleTransactionCompleted(transaction)
-  } else if (eventType === 'transaction.updated') {
-    await handleTransactionUpdated(transaction)
+    throw error
   }
-
-  return NextResponse.json({ ok: true })
 }

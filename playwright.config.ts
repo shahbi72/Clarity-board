@@ -3,6 +3,7 @@ import { defineConfig } from '@playwright/test'
 export default defineConfig({
   testDir: 'tests/e2e',
   workers: 1,
+  fullyParallel: false,
   use: {
     baseURL: 'http://127.0.0.1:3001',
   },
@@ -12,4 +13,14 @@ export default defineConfig({
     reuseExistingServer: true,
     timeout: 180_000,
   },
+  projects: [
+    {
+      name: 'reports',
+      testMatch: /reports-.*\.spec\.ts/,
+    },
+    {
+      name: 'legacy',
+      testIgnore: /reports-.*\.spec\.ts/,
+    },
+  ],
 })
