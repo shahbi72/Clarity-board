@@ -8,7 +8,7 @@ import { getCurrentUserIdentity } from '@/lib/server/auth'
 export const metadata: Metadata = {
   title: 'Pricing | Clarityboard',
   description:
-    'Single Shopify plan: 7-day free trial, then $25/month via Paddle.',
+    'Starter ($25) and Business ($39) plans for Shopify store owners. 7-day free trial via Paddle.',
 }
 
 export default async function PricingPage() {
@@ -35,7 +35,7 @@ export default async function PricingPage() {
             Shopify Orders CSV clarity tool for small stores.
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            One simple plan. 7-day free trial, then $25/month.
+            Starter is $25/month. Business is $39/month with live sync + insight notifications.
           </p>
           <div className="mt-6">
             <Button asChild size="lg">

@@ -4,8 +4,8 @@ export type EffectivePlan = PaidPlan | 'free'
 export const PLAN_RANK: Record<EffectivePlan, number> = {
   free: 0,
   basic: 1,
-  pro: 1,
-  business: 1,
+  pro: 2,
+  business: 2,
 }
 
 export const BASIC_PRICE_ID =
@@ -15,10 +15,12 @@ export const BASIC_PRICE_ID =
 
 export const PRO_PRICE_ID =
   process.env.NEXT_PUBLIC_PADDLE_PRICE_PRO_ID?.trim() ??
+  process.env.NEXT_PUBLIC_PADDLE_PRICE_BUSINESS_ID?.trim() ??
   ''
 
 export const BUSINESS_PRICE_ID =
   process.env.NEXT_PUBLIC_PADDLE_PRICE_BUSINESS_ID?.trim() ??
+  PRO_PRICE_ID ??
   ''
 
 export const PRICE_ID_CONFIG = {
@@ -32,9 +34,9 @@ export function getPriceIdForPlan(plan: PaidPlan): string {
     case 'basic':
       return BASIC_PRICE_ID
     case 'pro':
-      return BASIC_PRICE_ID
+      return BUSINESS_PRICE_ID || PRO_PRICE_ID
     case 'business':
-      return BASIC_PRICE_ID
+      return BUSINESS_PRICE_ID || PRO_PRICE_ID
   }
 }
 
@@ -45,7 +47,7 @@ export function normalizePaidPlan(value: string | null | undefined): PaidPlan | 
   }
 
   if (normalized === 'pro' || normalized === 'business' || normalized === 'growth' || normalized === 'scale') {
-    return 'basic'
+    return 'business'
   }
 
   return null
@@ -59,6 +61,13 @@ export function resolvePlanFromPriceId(priceId: string | null | undefined): Paid
 
   if (normalized === BASIC_PRICE_ID) {
     return 'basic'
+  }
+
+  if (
+    normalized === BUSINESS_PRICE_ID ||
+    normalized === PRO_PRICE_ID
+  ) {
+    return 'business'
   }
 
   return null
@@ -76,11 +85,11 @@ export function toPlanLabel(plan: EffectivePlan): string {
     case 'free':
       return 'Free'
     case 'basic':
-      return 'Shopify'
+      return 'Starter'
     case 'pro':
-      return 'Shopify'
+      return 'Business'
     case 'business':
-      return 'Shopify'
+      return 'Business'
   }
 }
 

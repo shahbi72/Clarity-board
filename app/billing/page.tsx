@@ -88,7 +88,7 @@ export default async function BillingPage() {
                 </Button>
               )}
               <Button asChild variant="outline">
-                <Link href="/pricing?upgrade=pro">Upgrade</Link>
+                <Link href="/pricing?upgrade=business">Upgrade to Business</Link>
               </Button>
             </div>
           </CardContent>

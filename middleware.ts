@@ -41,7 +41,14 @@ function isNoRowsError(error: PostgrestError | null): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  if (pathname.startsWith('/api/reports') || pathname.startsWith('/api/cron')) {
+  if (pathname.startsWith('/api/reports')) {
+    return NextResponse.json(
+      { error: 'Disabled for Shopify MVP: this endpoint has been deprecated.' },
+      { status: 410 }
+    )
+  }
+
+  if (pathname.startsWith('/api/cron') && pathname !== '/api/cron/business-sync') {
     return NextResponse.json(
       { error: 'Disabled for Shopify MVP: this endpoint has been deprecated.' },
       { status: 410 }

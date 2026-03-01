@@ -109,7 +109,16 @@ export function isSubscriptionActiveStatus(status: string | null | undefined): b
 }
 
 export function resolveEffectivePlan(subscription: SubscriptionRecord | null): EffectivePlan {
-  if (!subscription || !isSubscriptionActiveStatus(subscription.status)) {
+  if (!subscription) {
+    return 'free'
+  }
+
+  const status = normalizeSubscriptionStatus(subscription.status)
+  if (status === 'trialing' && subscription.trialEndsAt && subscription.trialEndsAt.getTime() < Date.now()) {
+    return 'free'
+  }
+
+  if (status !== 'active' && status !== 'trialing') {
     return 'free'
   }
 

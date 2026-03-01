@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server'
 import { ensureCurrentUser, getCurrentUserId } from '@/lib/server/auth'
 import { getErrorMessage, HttpError } from '@/lib/server/http-error'
 import { getShopifySummaryForUser } from '@/lib/server/shopify-summary'
-import { ensureShopifyTrialForUser, getShopifyBillingGate } from '@/lib/server/subscriptions'
+import {
+  ensureShopifyTrialForUser,
+  getEffectivePlanForUser,
+  getShopifyBillingGate,
+} from '@/lib/server/subscriptions'
 import type { ShopifySummaryApiResponse, ShopifyTrendRangeDays } from '@/lib/types/shopify'
 
 export const dynamic = 'force-dynamic'
@@ -18,9 +22,11 @@ export async function GET(request: Request) {
     const includeCancelled = parseBoolean(url.searchParams.get('includeCancelled'))
 
     const gate = await getShopifyBillingGate(userId)
+    const plan = await getEffectivePlanForUser(userId)
     if (!gate.allowed) {
       const response: ShopifySummaryApiResponse = {
         paywalled: true,
+        plan,
         gate: {
           ...gate,
           trialEndsAt: gate.trialEndsAt ? gate.trialEndsAt.toISOString() : null,
@@ -37,6 +43,7 @@ export async function GET(request: Request) {
 
     const response: ShopifySummaryApiResponse = {
       paywalled: false,
+      plan,
       gate: {
         ...gate,
         trialEndsAt: gate.trialEndsAt ? gate.trialEndsAt.toISOString() : null,

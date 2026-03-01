@@ -86,6 +86,7 @@ export function buildShopifySummary(input: SummaryBuildInput): ShopifySummary {
   let totalRevenue = 0
   let totalOrders = 0
   let totalUnitsSold = 0
+  let totalRefunded = 0
   let excludedCancelledOrders = 0
   let hasAnyCost = false
   let totalEstimatedCost = 0
@@ -119,6 +120,7 @@ export function buildShopifySummary(input: SummaryBuildInput): ShopifySummary {
 
     totalOrders += 1
     totalRevenue += netRevenueUsd
+    totalRefunded += refundedUsd
 
     const trendKey = order.createdDate
     trendTotalsByDate.set(trendKey, (trendTotalsByDate.get(trendKey) ?? 0) + netRevenueUsd)
@@ -182,6 +184,7 @@ export function buildShopifySummary(input: SummaryBuildInput): ShopifySummary {
       totalOrders,
       averageOrderValue: round2(averageOrderValue),
       totalUnitsSold,
+      totalRefunded: round2(totalRefunded),
       estimatedProfit: estimatedProfit != null ? round2(estimatedProfit) : null,
     },
     trend,
@@ -203,6 +206,7 @@ function createEmptySummary(input: SummaryBuildInput): ShopifySummary {
       totalOrders: 0,
       averageOrderValue: 0,
       totalUnitsSold: 0,
+      totalRefunded: 0,
       estimatedProfit: null,
     },
     trend: buildEmptyTrend(input.rangeDays),
