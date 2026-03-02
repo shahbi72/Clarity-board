@@ -21,6 +21,7 @@ export async function GET(request: Request) {
     const rows = parsed.rows.map((row) => ({
       orderId: String(row.orderId ?? ''),
       orderName: String(row.orderName ?? ''),
+      createdAt: row.createdAt ? String(row.createdAt) : null,
       createdDate: String(row.createdDate ?? ''),
       lineitemSku: row.lineitemSku ? String(row.lineitemSku) : null,
       productName: String(row.productName ?? ''),

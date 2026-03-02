@@ -34,6 +34,7 @@ export type SubscriptionRecord = {
 
 const ACTIVE_SUBSCRIPTION_STATUSES = new Set<SubscriptionStatus>(['active', 'trialing'])
 const BASIC_MONTHLY_AI_INSIGHTS_LIMIT = 5
+const BASIC_DAILY_AI_COPILOT_LIMIT = 10
 
 type UpsertSubscriptionInput = {
   userId: string
@@ -51,6 +52,13 @@ function getCurrentMonthKey(now = new Date()): string {
   const year = now.getUTCFullYear()
   const month = String(now.getUTCMonth() + 1).padStart(2, '0')
   return `${year}-${month}`
+}
+
+function getCurrentDayKey(now = new Date()): string {
+  const year = now.getUTCFullYear()
+  const month = String(now.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(now.getUTCDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 function normalizePlanForStorage(value: string | null | undefined): PaidPlan | null {
@@ -292,6 +300,71 @@ export async function consumeAiInsightAllowanceForUser(userId: string): Promise<
   })
 
   return { plan, remainingThisMonth: result }
+}
+
+export async function consumeShopifyCopilotAllowanceForUser(userId: string): Promise<{
+  plan: EffectivePlan
+  remainingToday: number | null
+}> {
+  const gate = await getShopifyBillingGate(userId)
+  if (!gate.allowed) {
+    throw new HttpError(402, 'Trial expired or subscription inactive. Subscribe to continue.')
+  }
+
+  const plan = await getEffectivePlanForUser(userId)
+  if (!hasPlanAtLeast(plan, 'basic')) {
+    throw new HttpError(402, 'Starter plan required for AI Copilot.')
+  }
+
+  if (plan !== 'basic') {
+    return { plan, remainingToday: null }
+  }
+
+  const dateKey = getCurrentDayKey()
+
+  const remaining = await prisma.$transaction(async (tx) => {
+    const existing = await tx.aiCopilotUsage.findUnique({
+      where: {
+        userId_dateKey: {
+          userId,
+          dateKey,
+        },
+      },
+    })
+
+    const usedCount = existing?.usedCount ?? 0
+    if (usedCount >= BASIC_DAILY_AI_COPILOT_LIMIT) {
+      throw new HttpError(
+        402,
+        `Starter includes ${BASIC_DAILY_AI_COPILOT_LIMIT} AI Copilot questions per day. Upgrade to Business for unlimited usage.`
+      )
+    }
+
+    const nextCount = usedCount + 1
+    await tx.aiCopilotUsage.upsert({
+      where: {
+        userId_dateKey: {
+          userId,
+          dateKey,
+        },
+      },
+      create: {
+        userId,
+        dateKey,
+        usedCount: nextCount,
+      },
+      update: {
+        usedCount: nextCount,
+      },
+    })
+
+    return BASIC_DAILY_AI_COPILOT_LIMIT - nextCount
+  })
+
+  return {
+    plan,
+    remainingToday: remaining,
+  }
 }
 
 export async function upsertSubscriptionForUser({

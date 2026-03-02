@@ -25,6 +25,7 @@ export type BusinessSyncResult = {
 type ShopifySummaryRow = {
   orderId: string
   orderName: string
+  createdAt: string | null
   createdDate: string
   lineitemSku: string | null
   productName: string
@@ -64,6 +65,7 @@ function mapParsedRowsToSummaryRows(rows: DataRow[]): ShopifySummaryRow[] {
     .map((row) => ({
       orderId: String(row.orderId ?? ''),
       orderName: String(row.orderName ?? ''),
+      createdAt: row.createdAt ? String(row.createdAt) : null,
       createdDate: String(row.createdDate ?? ''),
       lineitemSku: row.lineitemSku ? String(row.lineitemSku) : null,
       productName: String(row.productName ?? ''),
@@ -98,6 +100,7 @@ function buildSnapshotHash(summary: ShopifySummary): string {
         totals: summary.totals,
         trend: summary.trend,
         topProducts: summary.topProducts,
+        comparison7d: summary.comparison7d,
         excludedCancelledOrders: summary.excludedCancelledOrders,
       })
     )
@@ -270,6 +273,7 @@ export async function runBusinessSyncForUser(params: {
         userId: params.userId,
         sourceId: fetched.connectionId,
         snapshotId,
+        periodKey: insight.periodKey,
         type: insight.type,
         title: insight.title,
         body: insight.body,

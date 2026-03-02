@@ -1,4 +1,4 @@
-import { syncAllActiveSheetSources } from '@/lib/reports/ingestion/sync'
+import { runBusinessSyncForEligibleUsers } from '@/lib/server/business-sync/sync'
 import { jsonOk, requireCronSecret, withApiHandler } from '@/lib/reports/server/route'
 
 export async function GET(request: Request): Promise<Response> {
@@ -8,7 +8,7 @@ export async function GET(request: Request): Promise<Response> {
 export async function POST(request: Request): Promise<Response> {
   return withApiHandler(async () => {
     requireCronSecret(request)
-    const result = await syncAllActiveSheetSources()
+    const result = await runBusinessSyncForEligibleUsers()
     return jsonOk({ data: result })
   })
 }

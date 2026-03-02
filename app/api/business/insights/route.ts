@@ -53,10 +53,12 @@ export async function GET(request: Request) {
         take: parsed.limit,
         select: {
           id: true,
+          periodKey: true,
           type: true,
           title: true,
           body: true,
           severity: true,
+          deltaJson: true,
           createdAt: true,
           readAt: true,
         },
@@ -67,6 +69,10 @@ export async function GET(request: Request) {
       unreadCount,
       items: items.map((item) => ({
         ...item,
+        deltaJson:
+          item.deltaJson && typeof item.deltaJson === 'object' && !Array.isArray(item.deltaJson)
+            ? (item.deltaJson as Record<string, unknown>)
+            : null,
         createdAt: item.createdAt.toISOString(),
         readAt: item.readAt ? item.readAt.toISOString() : null,
       })),

@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum WorkspaceRole {
@@ -89,6 +90,7 @@ model User {
   profile               Profile?
   subscription          Subscription?
   aiInsightUsageEntries AiInsightUsage[]
+  aiCopilotUsageEntries AiCopilotUsage[]
   sheetConnection       SheetConnection?
   dataSnapshots         DataSnapshot[]
   insightEvents         InsightEvent[]
@@ -462,6 +464,20 @@ model AiInsightUsage {
   @@map("ai_insight_usage")
 }
 
+model AiCopilotUsage {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  dateKey   String   @map("date_key")
+  usedCount Int      @default(0) @map("used_count")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dateKey])
+  @@index([userId])
+  @@map("ai_copilot_usage")
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -545,6 +561,7 @@ model InsightEvent {
   userId     String
   sourceId   String
   snapshotId String
+  periodKey  String
   type       String
   title      String
   body       String
@@ -557,7 +574,7 @@ model InsightEvent {
   source   SheetConnection @relation(fields: [sourceId], references: [id], onDelete: Cascade)
   snapshot DataSnapshot    @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
 
-  @@unique([sourceId, snapshotId, type])
+  @@unique([sourceId, periodKey, type])
   @@index([userId, readAt, createdAt])
 }
 

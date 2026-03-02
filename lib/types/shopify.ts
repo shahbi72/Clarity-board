@@ -20,6 +20,61 @@ export interface ShopifyTopProduct {
   revenue: number
 }
 
+export interface ShopifyPeriodWindow {
+  from: string
+  to: string
+  revenue: number
+  orders: number
+  unitsSold: number
+  refunded: number
+  averageOrderValue: number
+  refundRate: number
+  marginPct: number | null
+}
+
+export interface ShopifyTopSkuDecline {
+  productName: string
+  sku: string | null
+  previousRevenue: number
+  currentRevenue: number
+  deltaPct: number
+  deltaValue: number
+  contributionShare: number | null
+}
+
+export interface ShopifyPeriodComparison {
+  windowDays: 7
+  current: ShopifyPeriodWindow
+  previous: ShopifyPeriodWindow
+  deltas: {
+    revenuePct: number
+    ordersPct: number
+    averageOrderValuePct: number
+    refundRateDelta: number
+    refundRateRelative: number | null
+    marginDelta: number | null
+  }
+  topSkuDeclines: ShopifyTopSkuDecline[]
+}
+
+export interface ShopifyDeadStockItem {
+  productName: string
+  sku: string | null
+  lastOrderDate: string
+  totalUnitsSold: number
+}
+
+export interface ShopifyDayOrdersPoint {
+  day: string
+  orders: number
+}
+
+export interface ShopifyHourOrdersPoint {
+  hour: number
+  label: string
+  orders: number
+}
+
 export interface ShopifyTrendPoint {
   date: string
   revenue: number
@@ -42,7 +97,18 @@ export interface ShopifySummary {
   }
   trend: ShopifyTrendPoint[]
   topProducts: ShopifyTopProduct[]
+  comparison7d: ShopifyPeriodComparison
   excludedCancelledOrders: number
+  deadStock: {
+    lookbackDays: 30
+    items: ShopifyDeadStockItem[]
+  }
+  salesTiming: {
+    bestDay: string | null
+    bestHour: string | null
+    ordersByDay: ShopifyDayOrdersPoint[]
+    ordersByHour: ShopifyHourOrdersPoint[]
+  }
 }
 
 export interface ShopifySummaryApiResponse {
@@ -73,10 +139,12 @@ export interface BusinessStatusResponse {
 
 export interface InsightEventDto {
   id: string
+  periodKey: string
   type: string
   title: string
   body: string
   severity: 'INFO' | 'WARNING' | 'CRITICAL'
+  deltaJson: Record<string, unknown> | null
   createdAt: string
   readAt: string | null
 }
@@ -84,4 +152,48 @@ export interface InsightEventDto {
 export interface InsightEventsResponse {
   unreadCount: number
   items: InsightEventDto[]
+}
+
+export interface ShopifyCopilotContextPacket {
+  comparison7d: {
+    current: ShopifyPeriodWindow
+    previous: ShopifyPeriodWindow
+    deltas: ShopifyPeriodComparison['deltas'] & {
+      revenueDelta: number
+      ordersDelta: number
+      averageOrderValueDelta: number
+      unitsSoldDelta: number
+      refundedDelta: number
+    }
+  }
+  kpis: {
+    totalRevenue: number
+    totalOrders: number
+    averageOrderValue: number
+    totalUnitsSold: number
+    totalRefunded: number
+  }
+  topProducts: ShopifyTopProduct[]
+  topSkuDeclines: ShopifyTopSkuDecline[]
+  profit: {
+    estimatedProfit: number | null
+    marginPct: number | null
+    lowMarginProducts: Array<{
+      productName: string
+      marginPct: number
+    }>
+  }
+  insights: Array<{
+    type: string
+    title: string
+    body: string
+    severity: 'INFO' | 'WARNING' | 'CRITICAL'
+    deltaJson: Record<string, unknown> | null
+  }>
+}
+
+export interface ShopifyCopilotResponse {
+  answer: string
+  plan: EffectivePlan
+  remainingQuestionsToday: number | null
 }
