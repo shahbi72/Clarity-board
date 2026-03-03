@@ -71,6 +71,8 @@ export async function ensureCurrentUser(userId: string) {
       create: { id: userId, name: defaultName },
     })
   } catch (error) {
+    console.error('DB ERROR:', error)
+
     const message = error instanceof Error ? error.message : String(error)
     const normalizedMessage = message.toLowerCase()
     const isDatabaseUrlError =

@@ -12,7 +12,9 @@ export async function GET(): Promise<Response> {
       uptimeMs: Date.now() - startedAt,
       timestamp: new Date().toISOString(),
     })
-  } catch {
+  } catch (error) {
+    console.error('DB ERROR:', error)
+
     return Response.json(
       {
         status: 'error',

@@ -16,6 +16,8 @@ export async function withApiHandler(handler: RouteHandler): Promise<Response> {
     response.headers.set('x-request-id', requestId)
     return response
   } catch (error) {
+    console.error('DB ERROR:', error)
+
     if (error instanceof ApiError) {
       return jsonError(error, requestId)
     }
@@ -25,7 +27,15 @@ export async function withApiHandler(handler: RouteHandler): Promise<Response> {
       message: error instanceof Error ? error.message : 'unknown_error',
     })
 
-    return jsonError(new ApiError(500, 'internal_error', 'An unexpected error occurred.'), requestId)
+    return jsonError(
+      new ApiError(
+        500,
+        'internal_error',
+        'An unexpected error occurred.',
+        error instanceof Error ? `${error.name}: ${error.message}` : String(error)
+      ),
+      requestId
+    )
   }
 }
 

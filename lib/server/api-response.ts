@@ -23,7 +23,17 @@ export class ApiRouteError extends Error {
   }
 }
 
+function stringifyError(error: unknown): string {
+  if (error instanceof Error) {
+    return `${error.name}: ${error.message}`
+  }
+
+  return String(error)
+}
+
 export function jsonApiError(error: unknown): NextResponse<ApiErrorShape> {
+  console.error('DB ERROR:', error)
+
   if (error instanceof ApiRouteError) {
     return NextResponse.json(
       {
@@ -43,6 +53,7 @@ export function jsonApiError(error: unknown): NextResponse<ApiErrorShape> {
         error: {
           code: 'http_error',
           message: error.message,
+          details: stringifyError(error),
         },
       },
       { status: error.status }
@@ -67,6 +78,7 @@ export function jsonApiError(error: unknown): NextResponse<ApiErrorShape> {
       error: {
         code: 'internal_error',
         message: error instanceof Error ? error.message : 'Unexpected server error.',
+        details: stringifyError(error),
       },
     },
     { status: 500 }
