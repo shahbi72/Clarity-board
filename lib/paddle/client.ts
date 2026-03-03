@@ -5,7 +5,8 @@ const PADDLE_SCRIPT_SOURCE = 'https://cdn.paddle.com/paddle/v2/paddle.js'
 type PaddleEnvironment = 'production' | 'sandbox'
 
 export type PaddleCheckoutOpenOptions = {
-  items: Array<{
+  transactionId?: string
+  items?: Array<{
     priceId: string
     quantity: number
   }>
@@ -13,6 +14,7 @@ export type PaddleCheckoutOpenOptions = {
     email?: string
   }
   customData?: Record<string, unknown>
+  settings?: Record<string, unknown>
 }
 
 export type PaddleJs = {

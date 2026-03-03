@@ -68,6 +68,10 @@ model User {
   name            String?
   image           String?
   emailVerified   DateTime?
+  paddleCustomerId String?   @map("paddle_customer_id")
+  plan            String    @default("free")
+  trialEndsAt     DateTime? @map("trial_ends_at")
+  subscriptionStatus String  @default("inactive") @map("subscription_status")
   activeDatasetId String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

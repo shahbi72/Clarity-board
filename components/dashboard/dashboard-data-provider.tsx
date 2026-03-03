@@ -29,6 +29,7 @@ type ViewState = {
   loading: boolean
   error: string | null
   paywalled: boolean
+  gate: ShopifySummaryApiResponse['gate'] | null
   summary: ShopifySummary | null
   plan: EffectivePlan | null
 }
@@ -68,6 +69,7 @@ type DashboardDataContextValue = {
   planType: DashboardPlanType
   user: DashboardUserInfo
   viewState: ViewState
+  billingGate: ShopifySummaryApiResponse['gate'] | null
   summary: ShopifySummary | null
   rangeDays: ShopifyTrendRangeDays
   setRangeDays: (value: ShopifyTrendRangeDays) => void
@@ -129,6 +131,7 @@ const DEFAULT_STATE: ViewState = {
   loading: true,
   error: null,
   paywalled: false,
+  gate: null,
   summary: null,
   plan: null,
 }
@@ -192,6 +195,7 @@ export function DashboardDataProvider({
         loading: false,
         error: payload.error ?? null,
         paywalled: payload.paywalled,
+        gate: payload.gate ?? null,
         summary: payload.summary ?? null,
         plan: payload.plan ?? null,
       })
@@ -200,6 +204,7 @@ export function DashboardDataProvider({
         loading: false,
         error: error instanceof Error ? error.message : 'Unable to load dashboard.',
         paywalled: false,
+        gate: null,
         summary: null,
         plan: null,
       })
@@ -701,6 +706,7 @@ export function DashboardDataProvider({
       planType,
       user,
       viewState: state,
+      billingGate: state.gate,
       summary,
       rangeDays,
       setRangeDays,

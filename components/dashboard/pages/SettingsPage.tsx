@@ -7,6 +7,8 @@ import { DashboardPageState } from '@/components/dashboard/pages/DashboardPageSt
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
+import { useBillingActions } from '@/hooks/use-billing-actions'
+import { useUserPlan } from '@/hooks/use-user-plan'
 
 const CARD_CLASS = 'bg-white rounded-2xl shadow-sm border border-[#d9e1ef]'
 const PREFS_STORAGE_KEY = 'clarityboard.dashboard.notificationPrefs'
@@ -24,7 +26,9 @@ const DEFAULT_PREFS: NotificationPrefs = {
 }
 
 export function SettingsPage() {
-  const { planType, user } = useDashboardData()
+  const { user } = useDashboardData()
+  const userPlan = useUserPlan()
+  const { openCheckout, openPortal, checkoutLoading, portalLoading, billingError } = useBillingActions()
   const [prefs, setPrefs] = useState<NotificationPrefs>(() => {
     if (typeof window === 'undefined') {
       return DEFAULT_PREFS
@@ -102,14 +106,36 @@ export function SettingsPage() {
               Current plan and upgrade options.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-wrap items-center justify-between gap-3">
+          <CardContent className="space-y-3">
             <p className="text-sm text-[#1b2540]">
               Current plan:{' '}
-              <span className="font-semibold">{planType === 'business' ? 'Business' : 'Starter'}</span>
+              <span className="font-semibold">
+                {userPlan.isBusiness ? 'Business' : userPlan.plan === 'free' ? 'Free' : 'Starter'}
+              </span>
             </p>
-            <Button asChild className="bg-[#4285f4] hover:bg-[#4285f4]/90">
-              <Link href="/pricing?upgrade=business">Upgrade</Link>
-            </Button>
+            {userPlan.isTrial ? (
+              <p className="text-sm text-[#6b7a99]">
+                Trial days remaining: <span className="font-semibold text-[#1b2540]">{userPlan.trialDaysLeft}</span>
+              </p>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                className="bg-[#4285f4] hover:bg-[#4285f4]/90"
+                onClick={() => void openCheckout('business')}
+                disabled={checkoutLoading}
+              >
+                {checkoutLoading ? 'Opening checkout...' : 'Upgrade to Business'}
+              </Button>
+              <Button
+                variant="outline"
+                className="border-[#d9e1ef] text-[#1b2540]"
+                onClick={() => void openPortal()}
+                disabled={portalLoading}
+              >
+                {portalLoading ? 'Opening portal...' : 'Manage Subscription'}
+              </Button>
+            </div>
+            {billingError ? <p className="text-sm text-[#ef4444]">{billingError}</p> : null}
           </CardContent>
         </Card>
 

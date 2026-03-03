@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { useState } from 'react'
 import { Loader2, RefreshCw } from 'lucide-react'
 import {
   formatDateTime,
@@ -10,12 +10,21 @@ import {
 import { DashboardPageState } from '@/components/dashboard/pages/DashboardPageState'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { useBillingActions } from '@/hooks/use-billing-actions'
+import { useUserPlan } from '@/hooks/use-user-plan'
 
 const CARD_CLASS = 'bg-white rounded-2xl shadow-sm border border-[#d9e1ef]'
 
 export function SyncPage() {
   const {
-    planType,
     businessStatus,
     businessError,
     loadingBusiness,
@@ -31,10 +40,13 @@ export function SyncPage() {
     selectSheet,
     insights,
   } = useDashboardData()
+  const userPlan = useUserPlan()
+  const { openCheckout, checkoutLoading, billingError } = useBillingActions()
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
 
   return (
     <DashboardPageState>
-      {planType !== 'business' ? (
+      {!userPlan.isBusiness ? (
         <Card className={`${CARD_CLASS} border-[#f59e0b]/50 bg-[#f59e0b]/10`}>
           <CardHeader>
             <CardTitle className="text-[#1b2540]">Upgrade to Business for Google Sheets Sync</CardTitle>
@@ -42,11 +54,57 @@ export function SyncPage() {
               Sync is available on Business plan only.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button asChild className="bg-[#4285f4] hover:bg-[#4285f4]/90">
-              <Link href="/pricing?upgrade=business">Upgrade now</Link>
+          <CardContent className="space-y-3">
+            <Button
+              className="bg-[#4285f4] hover:bg-[#4285f4]/90"
+              onClick={() => setUpgradeModalOpen(true)}
+            >
+              View upgrade options
             </Button>
+            {billingError ? <p className="text-sm text-[#ef4444]">{billingError}</p> : null}
           </CardContent>
+
+          <Dialog open={upgradeModalOpen} onOpenChange={setUpgradeModalOpen}>
+            <DialogContent className="max-w-xl bg-white">
+              <DialogHeader>
+                <DialogTitle className="text-[#1b2540]">Upgrade to Business</DialogTitle>
+                <DialogDescription className="text-[#6b7a99]">
+                  Unlock Google Sheets sync and live insight notifications.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <article className="rounded-xl border border-[#d9e1ef] bg-white p-4">
+                  <p className="text-sm font-semibold text-[#1b2540]">Starter</p>
+                  <p className="mt-1 text-2xl font-semibold text-[#1b2540]">$25/mo</p>
+                  <ul className="mt-3 space-y-1 text-sm text-[#6b7a99]">
+                    <li>CSV dashboard analytics</li>
+                    <li>AI copilot starter limits</li>
+                    <li>No live Google Sheets sync</li>
+                  </ul>
+                </article>
+                <article className="rounded-xl border border-[#4285f4] bg-[#4285f4]/5 p-4">
+                  <p className="text-sm font-semibold text-[#1b2540]">Business</p>
+                  <p className="mt-1 text-2xl font-semibold text-[#1b2540]">$39/mo</p>
+                  <ul className="mt-3 space-y-1 text-sm text-[#6b7a99]">
+                    <li>Everything in Starter</li>
+                    <li>Google Sheets live sync</li>
+                    <li>Unread alert notifications</li>
+                  </ul>
+                </article>
+              </div>
+
+              <DialogFooter>
+                <Button
+                  className="bg-[#4285f4] text-white hover:bg-[#4285f4]/90"
+                  onClick={() => void openCheckout('business')}
+                  disabled={checkoutLoading}
+                >
+                  {checkoutLoading ? 'Opening checkout...' : 'Upgrade Now'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </Card>
       ) : (
         <div className="space-y-6">

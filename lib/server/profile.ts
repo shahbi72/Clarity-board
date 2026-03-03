@@ -7,7 +7,9 @@ import {
   type ProfileUpdateInput,
   type UserProfile,
 } from '@/lib/profile'
+import { ensureCurrentUser } from '@/lib/server/auth'
 import { HttpError } from '@/lib/server/http-error'
+import { ensureShopifyTrialForUser } from '@/lib/server/subscriptions'
 import { getSupabaseServerClient, isSupabaseAuthConfigured } from '@/lib/supabase/server'
 
 export type ProfileResult = {
@@ -66,6 +68,9 @@ export async function ensureProfileInitializedForCurrentUser(): Promise<void> {
   if (error) {
     throw new HttpError(500, error.message)
   }
+
+  await ensureCurrentUser(user.id)
+  await ensureShopifyTrialForUser(user.id)
 }
 
 async function readProfileRow(

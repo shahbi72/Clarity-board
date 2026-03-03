@@ -31,7 +31,7 @@ const PLAN_DEFINITIONS: PlanDefinition[] = [
     id: 'basic',
     title: 'Starter',
     subtitle: 'CSV-first clarity for Shopify owners.',
-    priceLabel: '$29',
+    priceLabel: '$25',
     monthlyLabel: 'per month',
     featureList: [
       'Shopify Orders CSV upload',

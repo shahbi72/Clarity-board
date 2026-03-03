@@ -29,6 +29,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useBillingActions } from '@/hooks/use-billing-actions'
+import { useUserPlan } from '@/hooks/use-user-plan'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
@@ -91,7 +93,9 @@ function getInitials(nameOrEmail: string): string {
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const { unreadCount, user, planType } = useDashboardData()
+  const { unreadCount, user } = useDashboardData()
+  const userPlan = useUserPlan()
+  const { openCheckout, openPortal, checkoutLoading, portalLoading } = useBillingActions()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
@@ -106,7 +110,10 @@ export function AppShell({ children }: AppShellProps) {
   const contentOffsetClass = collapsed ? 'md:left-16' : 'md:left-[240px]'
 
   const userLabel = user.name || user.email || 'User'
-  const planLabel = planType === 'business' ? 'Business' : 'Starter'
+  const planLabel = userPlan.isBusiness ? 'Business' : userPlan.plan === 'free' ? 'Free' : 'Starter'
+  const showTrialBanner = userPlan.isTrial && userPlan.trialDaysLeft > 0
+  const showPaymentFailedBanner = userPlan.subscriptionStatus === 'past_due'
+  const hasTopBanner = showTrialBanner || showPaymentFailedBanner
 
   async function handleSignOut() {
     setIsSigningOut(true)
@@ -159,7 +166,7 @@ export function AppShell({ children }: AppShellProps) {
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon
             const active = isActivePath(pathname, item.href)
-            const locked = Boolean(item.businessOnly && planType !== 'business')
+            const locked = Boolean(item.businessOnly && !userPlan.isBusiness)
 
             return (
               <Link
@@ -262,9 +269,51 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </header>
 
+      {showTrialBanner ? (
+        <div
+          className={cn(
+            'fixed left-0 right-0 top-[60px] z-20 flex min-h-11 items-center justify-between border-b border-[#d9e1ef] bg-[#1b2540] px-4 py-2 text-sm text-white md:px-6',
+            contentOffsetClass
+          )}
+        >
+          <p>
+            {userPlan.trialDaysLeft} day{userPlan.trialDaysLeft === 1 ? '' : 's'} left in your trial
+            {' '} - Upgrade now
+          </p>
+          <Button
+            size="sm"
+            className="bg-[#4285f4] text-white hover:bg-[#4285f4]/90"
+            onClick={() => void openCheckout('business')}
+            disabled={checkoutLoading}
+          >
+            {checkoutLoading ? 'Opening...' : 'Upgrade now'}
+          </Button>
+        </div>
+      ) : null}
+
+      {!showTrialBanner && showPaymentFailedBanner ? (
+        <div
+          className={cn(
+            'fixed left-0 right-0 top-[60px] z-20 flex min-h-11 items-center justify-between border-b border-[#d9e1ef] bg-[#ef4444] px-4 py-2 text-sm text-white md:px-6',
+            contentOffsetClass
+          )}
+        >
+          <p>Payment failed. Update billing details to keep your dashboard access.</p>
+          <Button
+            size="sm"
+            className="bg-white text-[#ef4444] hover:bg-white/90"
+            onClick={() => void openPortal()}
+            disabled={portalLoading}
+          >
+            {portalLoading ? 'Opening...' : 'Manage billing'}
+          </Button>
+        </div>
+      ) : null}
+
       <main
         className={cn(
-          'fixed bottom-0 left-0 right-0 top-[60px] overflow-y-auto p-4 md:p-6',
+          'fixed bottom-0 left-0 right-0 overflow-y-auto p-4 md:p-6',
+          hasTopBanner ? 'top-[104px]' : 'top-[60px]',
           contentOffsetClass
         )}
       >

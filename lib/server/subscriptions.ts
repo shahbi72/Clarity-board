@@ -48,6 +48,14 @@ type UpsertSubscriptionInput = {
   canceledAt?: Date | null
 }
 
+type UserBillingSnapshotInput = {
+  userId: string
+  plan: PaidPlan
+  status: SubscriptionStatus
+  trialEndsAt: Date | null
+  paddleCustomerId: string | null
+}
+
 function getCurrentMonthKey(now = new Date()): string {
   const year = now.getUTCFullYear()
   const month = String(now.getUTCMonth() + 1).padStart(2, '0')
@@ -67,6 +75,44 @@ function normalizePlanForStorage(value: string | null | undefined): PaidPlan | n
     return 'basic'
   }
   return normalizePaidPlan(normalized)
+}
+
+function resolveUserPlanValue(plan: PaidPlan, status: SubscriptionStatus): string {
+  if (status === 'trialing') {
+    return 'trial'
+  }
+
+  if (status === 'active') {
+    return plan === 'business' ? 'business' : 'starter'
+  }
+
+  return 'free'
+}
+
+async function syncUserBillingSnapshot({
+  userId,
+  plan,
+  status,
+  trialEndsAt,
+  paddleCustomerId,
+}: UserBillingSnapshotInput): Promise<void> {
+  await prisma.user.upsert({
+    where: { id: userId },
+    create: {
+      id: userId,
+      name: 'Clarityboard User',
+      paddleCustomerId,
+      plan: resolveUserPlanValue(plan, status),
+      trialEndsAt: status === 'trialing' ? trialEndsAt : null,
+      subscriptionStatus: status,
+    },
+    update: {
+      paddleCustomerId,
+      plan: resolveUserPlanValue(plan, status),
+      trialEndsAt: status === 'trialing' ? trialEndsAt : null,
+      subscriptionStatus: status,
+    },
+  })
 }
 
 export function normalizeSubscriptionStatus(value: string | null | undefined): SubscriptionStatus {
@@ -382,6 +428,8 @@ export async function upsertSubscriptionForUser({
   if (!normalizedPlan) {
     throw new HttpError(400, 'Invalid plan value for subscription update.')
   }
+  const normalizedStatus = normalizeSubscriptionStatus(status)
+  const normalizedTrialEndsAt = normalizedStatus === 'trialing' ? trialEndsAt ?? null : null
 
   const row = await prisma.subscription.upsert({
     where: { userId },
@@ -390,10 +438,10 @@ export async function upsertSubscriptionForUser({
       provider: 'PADDLE',
       plan: normalizedPlan,
       planPriceId: planPriceId ?? null,
-      status: normalizeSubscriptionStatus(status),
+      status: normalizedStatus,
       paddleCustomerId: paddleCustomerId ?? null,
       paddleSubscriptionId: paddleSubscriptionId ?? null,
-      trialEndsAt: trialEndsAt ?? undefined,
+      trialEndsAt: normalizedTrialEndsAt ?? undefined,
       currentPeriodEnd: currentPeriodEnd ?? null,
       canceledAt: canceledAt ?? null,
     },
@@ -402,10 +450,10 @@ export async function upsertSubscriptionForUser({
       provider: 'PADDLE',
       plan: normalizedPlan,
       planPriceId: planPriceId ?? null,
-      status: normalizeSubscriptionStatus(status),
+      status: normalizedStatus,
       paddleCustomerId: paddleCustomerId ?? null,
       paddleSubscriptionId: paddleSubscriptionId ?? null,
-      trialEndsAt: trialEndsAt ?? null,
+      trialEndsAt: normalizedTrialEndsAt,
       currentPeriodEnd: currentPeriodEnd ?? null,
       canceledAt: canceledAt ?? null,
     },
@@ -421,6 +469,14 @@ export async function upsertSubscriptionForUser({
       currentPeriodEnd: true,
       updatedAt: true,
     },
+  })
+
+  await syncUserBillingSnapshot({
+    userId,
+    plan: normalizedPlan,
+    status: normalizedStatus,
+    trialEndsAt: normalizedTrialEndsAt,
+    paddleCustomerId: paddleCustomerId ?? null,
   })
 
   const mapped = mapPrismaRowToRecord(row)

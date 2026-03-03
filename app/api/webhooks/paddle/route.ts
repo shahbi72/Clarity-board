@@ -247,7 +247,19 @@ function statusFromEvent(eventType: string, data: PaddleBillingData): string {
     return 'active'
   }
 
-  if (lowered === 'payment.failed') {
+  if (lowered === 'subscription.created') {
+    if (data.trial_dates?.ends_at) {
+      return 'trialing'
+    }
+
+    return 'active'
+  }
+
+  if (lowered === 'subscription.activated') {
+    return 'active'
+  }
+
+  if (lowered === 'payment.failed' || lowered === 'subscription.payment.failed') {
     return 'past_due'
   }
 
@@ -298,12 +310,14 @@ function isProcessableBillingEvent(eventType: string): boolean {
     case 'transaction.completed':
     case 'transaction.updated':
     case 'subscription.created':
+    case 'subscription.activated':
     case 'subscription.updated':
     case 'subscription.canceled':
     case 'subscription.cancelled':
     case 'subscription.paused':
     case 'payment.succeeded':
     case 'payment.failed':
+    case 'subscription.payment.failed':
       return true
     default:
       return false
