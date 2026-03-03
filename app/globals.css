@@ -84,7 +84,7 @@
 }
 
 @theme inline {
-  --font-sans: 'Work Sans', 'Source Sans 3', 'Segoe UI', sans-serif;
+  --font-sans: 'Inter', 'Source Sans 3', 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', 'JetBrains Mono', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);

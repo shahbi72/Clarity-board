@@ -1,5 +1,5 @@
-import { ShopifyDashboardClient } from '@/components/shopify/shopify-dashboard-client'
+import { OverviewPage } from '@/components/dashboard/pages/OverviewPage'
 
 export default function DashboardPage() {
-  return <ShopifyDashboardClient />
+  return <OverviewPage />
 }

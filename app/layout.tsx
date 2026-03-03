@@ -1,11 +1,11 @@
 import React from 'react'
 import type { Metadata, Viewport } from 'next'
 import { cookies } from 'next/headers'
-import { IBM_Plex_Mono, Work_Sans } from 'next/font/google'
+import { IBM_Plex_Mono, Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout'
-import { PublicFooter } from '@/components/marketing/PublicFooter'
+import { PublicFooterGate } from '@/components/layout/PublicFooterGate'
 import { LanguageProvider } from '@/components/language/language-provider'
 import { Toaster } from '@/components/ui/toaster'
 import {
@@ -18,7 +18,7 @@ import {
 import { getSupabaseServerClient, isSupabaseAuthConfigured } from '@/lib/supabase/server'
 import './globals.css'
 
-const workSans = Work_Sans({
+const inter = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
 })
@@ -140,7 +140,7 @@ export default async function RootLayout({
       dir={getLanguageDirection(initialLanguage)}
       suppressHydrationWarning
     >
-      <body className={`${workSans.variable} ${plexMono.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${plexMono.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -149,7 +149,7 @@ export default async function RootLayout({
         >
           <LanguageProvider initialLanguage={initialLanguage}>
             <DashboardLayout>{children}</DashboardLayout>
-            <PublicFooter />
+            <PublicFooterGate />
             <Toaster />
           </LanguageProvider>
         </ThemeProvider>

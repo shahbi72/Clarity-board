@@ -9,13 +9,9 @@ test('landing page is Shopify-focused', async ({ page }) => {
   await expect(page.getByRole('link', { name: /start free trial/i }).first()).toBeVisible()
 })
 
-test('demo dashboard renders KPI essentials without auth', async ({ page }) => {
+test('dashboard overview route loads shell layout', async ({ page }) => {
   await page.goto('/dashboard?demo=1', { waitUntil: 'domcontentloaded' })
 
-  await expect(page.getByRole('heading', { name: /shopify store health monitor/i })).toBeVisible()
-  await expect(page.getByText('Total Revenue')).toBeVisible()
-  await expect(page.getByText('Total Orders')).toBeVisible()
-  await expect(page.getByText('AOV', { exact: true })).toBeVisible()
-  await expect(page.getByText('Units Sold').first()).toBeVisible()
-  await expect(page.getByText('Top 5 Products by Revenue')).toBeVisible()
+  await expect(page).toHaveURL(/\/dashboard/)
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 })

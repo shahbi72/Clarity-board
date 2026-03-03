@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test'
 
-test('business dashboard shows insights, bell notifications, and AI copilot', async ({ page }) => {
+test('dashboard sidebar navigation loads all routes and starter sync remains locked', async ({ page }) => {
   await page.route('**/api/shopify/summary**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
         paywalled: false,
-        plan: 'business',
+        plan: 'basic',
         summary: {
           source: 'user',
           datasetName: 'Mock Store',
@@ -90,34 +90,22 @@ test('business dashboard shows insights, bell notifications, and AI copilot', as
     })
   })
 
-  await page.route('**/api/shopify/copilot', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        answer: 'Revenue improved because orders and AOV both increased versus the previous period.',
-        plan: 'business',
-        remainingQuestionsToday: null,
-      }),
-    })
-  })
-
   await page.route('**/api/business/status', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        eligible: true,
-        reason: 'ok',
-        message: null,
+        eligible: false,
+        reason: 'plan_upgrade_required',
+        message: 'Starter plan does not include sync.',
         source: {
-          connected: true,
+          connected: false,
           provider: 'GOOGLE_SHEETS',
-          spreadsheetName: 'Mock Sheet',
-          sheetName: 'Orders',
-          lastSyncedAt: '2026-03-01T09:00:00.000Z',
+          spreadsheetName: null,
+          sheetName: null,
+          lastSyncedAt: null,
         },
-        unreadCount: 1,
+        unreadCount: 2,
       }),
     })
   })
@@ -144,24 +132,50 @@ test('business dashboard shows insights, bell notifications, and AI copilot', as
             createdAt: '2026-03-01T09:05:00.000Z',
             readAt: null,
           },
+          {
+            id: 'evt_2',
+            periodKey: '2026-02-23:2026-03-01',
+            type: 'orders_drop_7d',
+            title: 'Orders down 6.0%',
+            body: 'Primary driver: fewer repeat customers.\nSuggested action: launch a win-back campaign.',
+            severity: 'WARNING',
+            deltaJson: {
+              deltaPct: -0.06,
+            },
+            createdAt: '2026-03-01T09:10:00.000Z',
+            readAt: null,
+          },
         ],
       }),
     })
   })
 
   await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await expect(page.getByText('Top Alerts')).toBeVisible()
 
+  await page.getByRole('link', { name: 'Insights' }).click()
+  await expect(page).toHaveURL(/\/dashboard\/insights$/)
+  await expect(page.getByRole('heading', { name: 'Insights' })).toBeVisible()
   await expect(page.getByText('What Changed / What Needs Attention')).toBeVisible()
-  await expect(page.getByText('Store Health Score')).toBeVisible()
-  await expect(page.getByText('Business Live Sync')).toBeVisible()
-  await expect(page.getByRole('button', { name: /Notifications \(1\)/i })).toBeVisible()
 
-  await page.getByRole('button', { name: /Notifications \(1\)/i }).click()
-  await expect(page.getByText('Revenue up 13.6% (+$80.00) vs last 7 days').first()).toBeVisible()
+  await page.getByRole('link', { name: 'Products' }).click()
+  await expect(page).toHaveURL(/\/dashboard\/products$/)
+  await expect(page.getByText('SKU Performance')).toBeVisible()
 
-  await expect(page.getByText('AI Copilot')).toBeVisible()
-  await page.getByRole('button', { name: /Why did revenue change/i }).click()
-  await expect(
-    page.getByText('Revenue improved because orders and AOV both increased versus the previous period.')
-  ).toBeVisible()
+  await page.getByRole('link', { name: 'Profit Estimator' }).click()
+  await expect(page).toHaveURL(/\/dashboard\/profit$/)
+  await expect(page.getByText('Profit Inputs')).toBeVisible()
+
+  await page.getByRole('link', { name: 'Revenue Trends' }).click()
+  await expect(page).toHaveURL(/\/dashboard\/trends$/)
+  await expect(page.getByRole('heading', { name: 'Revenue Trends' })).toBeVisible()
+
+  await page.getByRole('link', { name: 'Sync' }).click()
+  await expect(page).toHaveURL(/\/dashboard\/sync$/)
+  await expect(page.getByText('Upgrade to Business for Google Sheets Sync')).toBeVisible()
+
+  await page.getByRole('link', { name: 'Settings' }).click()
+  await expect(page).toHaveURL(/\/dashboard\/settings$/)
+  await expect(page.getByText('Notification Preferences')).toBeVisible()
 })
