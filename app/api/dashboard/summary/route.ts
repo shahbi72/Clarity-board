@@ -20,17 +20,20 @@ export async function GET(request: Request) {
     const summary = await getDashboardSummaryForUser(userId, activeDatasetId, { from, to })
     const response: DashboardSummaryResponse = summary
     return NextResponse.json(response)
-  } catch (error) {
-    if (isDatabaseConnectivityError(error)) {
-      const response: DashboardSummaryResponse = createEmptyDashboardSummary()
-      return NextResponse.json(response)
-    }
+  } catch (error: any) {
+    console.error("Dashboard summary error:", error);
 
-    const status = error instanceof HttpError ? error.status : 500
-    return NextResponse.json(
-      { error: getErrorMessage(error) },
-      { status }
-    )
+    return Response.json(
+      {
+        error: "Unable to initialize user data",
+        debug: {
+          name: error?.name,
+          code: error?.code,
+          message: error?.message
+        }
+      },
+      { status: 500 }
+    );
   }
 }
 

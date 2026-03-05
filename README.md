@@ -83,6 +83,16 @@ App + DB:
 - `DIRECT_URL` (Supabase direct connection, port `5432`, used by Prisma migrations)
 - `PRISMA_DISABLE_POSTGRESQL_PREPARED_STATEMENTS=true` (recommended with PgBouncer)
 
+Production requirement (Vercel + Supabase + Prisma):
+
+```env
+DATABASE_URL="postgresql://postgres.<project-ref>:[PASSWORD]@aws-1-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true&connection_limit=1"
+DIRECT_URL="postgresql://postgres.<project-ref>:[PASSWORD]@db.<project-ref>.supabase.co:5432/postgres?sslmode=require"
+PRISMA_DISABLE_POSTGRESQL_PREPARED_STATEMENTS=true
+```
+
+If your database password contains special characters (for example `@`, `:`, `/`, `?`, `#`, `%`), URL-encode it in both URLs.
+
 Auth:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
