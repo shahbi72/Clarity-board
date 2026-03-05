@@ -19,10 +19,28 @@ export type CurrentUserIdentity = {
   email: string | null
 }
 
-export async function getCurrentUserIdentity(): Promise<CurrentUserIdentity> {
+type GetCurrentUserOptions = {
+  requireAuth?: boolean
+}
+
+function getDemoIdentity(): CurrentUserIdentity {
+  return {
+    id: DEMO_USER_ID,
+    email: 'demo@clarityboard.app',
+  }
+}
+
+export async function getCurrentUserIdentity(
+  options: GetCurrentUserOptions = {}
+): Promise<CurrentUserIdentity> {
+  const requireAuth = options.requireAuth ?? true
+
   if (!isSupabaseAuthConfigured()) {
     if (!isFallbackAuthEnabled()) {
-      throw new HttpError(500, 'Supabase auth configuration is required.')
+      if (requireAuth) {
+        throw new HttpError(500, 'Supabase auth configuration is required.')
+      }
+      return getDemoIdentity()
     }
 
     const cookieStore = await cookies()
@@ -30,24 +48,27 @@ export async function getCurrentUserIdentity(): Promise<CurrentUserIdentity> {
       cookieStore.get(FALLBACK_AUTH_COOKIE_NAME)?.value
     )
 
-    if (!hasFallbackSession) {
+    if (!hasFallbackSession && requireAuth) {
       throw new HttpError(401, 'Authentication required.')
     }
 
-    return {
-      id: DEMO_USER_ID,
-      email: 'demo@clarityboard.app',
-    }
+    return getDemoIdentity()
   }
 
   const supabase = await getSupabaseServerClient()
   if (!supabase) {
-    throw new HttpError(500, 'Authentication provider is unavailable.')
+    if (requireAuth) {
+      throw new HttpError(500, 'Authentication provider is unavailable.')
+    }
+    return getDemoIdentity()
   }
 
   const { data, error } = await supabase.auth.getUser()
   if (error || !data.user) {
-    throw new HttpError(401, 'Authentication required.')
+    if (requireAuth) {
+      throw new HttpError(401, 'Authentication required.')
+    }
+    return getDemoIdentity()
   }
 
   return {
@@ -56,38 +77,120 @@ export async function getCurrentUserIdentity(): Promise<CurrentUserIdentity> {
   }
 }
 
-export async function getCurrentUserId(): Promise<string> {
-  const identity = await getCurrentUserIdentity()
+export async function getCurrentUserId(options: GetCurrentUserOptions = {}): Promise<string> {
+  const identity = await getCurrentUserIdentity(options)
   return identity.id
 }
 
 export async function ensureCurrentUser(userId: string) {
   const defaultName = userId === DEMO_USER_ID ? 'Demo User' : 'Clarityboard User'
+  const userLookupQuery = 'prisma.user.findUnique({ where: { id } })'
 
   try {
-    await prisma.user.upsert({
+    const existingUser = await prisma.user.findUnique({
       where: { id: userId },
-      update: {},
-      create: { id: userId, name: defaultName },
+      select: { id: true },
+    })
+
+    if (existingUser) {
+      return
+    }
+  } catch (error) {
+    throw mapEnsureCurrentUserError(error, {
+      conditionFailed: 'user_lookup_failed',
+      nullOrEmptyQuery: null,
+    })
+  }
+
+  try {
+    await prisma.user.create({
+      data: { id: userId, name: defaultName },
     })
   } catch (error) {
-    console.error('DB ERROR:', error)
+    const code =
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      typeof (error as { code?: unknown }).code === 'string'
+        ? (error as { code: string }).code.toUpperCase()
+        : null
 
-    const message = error instanceof Error ? error.message : String(error)
-    const normalizedMessage = message.toLowerCase()
-    const isDatabaseUrlError =
-      normalizedMessage.includes('datasource') &&
-      normalizedMessage.includes('url')
-    const isConnectivityError = isDatabaseConnectivityError(error)
-
-    if (isDatabaseUrlError) {
-      throw new Error(POSTGRES_DATABASE_URL_HELP)
+    if (code === 'P2002') {
+      return
     }
 
-    if (isConnectivityError) {
-      throw new Error('Database connection unavailable. Unable to reach Postgres.')
-    }
-
-    throw new Error('Unable to initialize user data. Check database configuration and permissions.')
+    throw mapEnsureCurrentUserError(error, {
+      conditionFailed: 'user_missing_create_failed',
+      nullOrEmptyQuery: userLookupQuery,
+    })
   }
+}
+
+function mapEnsureCurrentUserError(
+  error: unknown,
+  details: {
+    conditionFailed: string
+    nullOrEmptyQuery: string | null
+  }
+): Error {
+  const message = error instanceof Error ? error.message : String(error)
+  const normalizedMessage = message.toLowerCase()
+  const isDatabaseUrlError = normalizedMessage.includes('datasource') && normalizedMessage.includes('url')
+  const isConnectivityError = isDatabaseConnectivityError(error)
+  const safeMessage = sanitizePotentialSecrets(message)
+
+  logUserInitFailure(details, error)
+
+  if (isDatabaseUrlError) {
+    return new Error(`${POSTGRES_DATABASE_URL_HELP} Root cause: ${safeMessage}`)
+  }
+
+  if (isConnectivityError) {
+    return new Error(
+      `Database connection unavailable. Unable to reach Postgres. Root cause: ${safeMessage}`
+    )
+  }
+
+  if (error instanceof Error) {
+    return error
+  }
+
+  return new Error(safeMessage)
+}
+
+function logUserInitFailure(
+  details: {
+    conditionFailed: string
+    nullOrEmptyQuery: string | null
+  },
+  error: unknown
+) {
+  const errorObject =
+    error && typeof error === 'object' ? (error as { name?: unknown; code?: unknown; message?: unknown }) : {}
+  const errorName = typeof errorObject.name === 'string' ? errorObject.name : null
+  const errorCode =
+    typeof errorObject.code === 'string' || typeof errorObject.code === 'number'
+      ? String(errorObject.code)
+      : null
+  const errorMessage =
+    typeof errorObject.message === 'string'
+      ? sanitizePotentialSecrets(errorObject.message)
+      : sanitizePotentialSecrets(String(error))
+
+  console.error('User initialization failed', {
+    conditionFailed: details.conditionFailed,
+    demoUserIdPresent: Boolean(process.env.DEMO_USER_ID?.trim()),
+    nullOrEmptyQuery: details.nullOrEmptyQuery,
+    error: {
+      name: errorName,
+      code: errorCode,
+      message: errorMessage,
+    },
+  })
+}
+
+function sanitizePotentialSecrets(value: string): string {
+  return value
+    .replace(/(postgres(?:ql)?:\/\/[^:\s]+:)[^@/\s]+@/gi, '$1***@')
+    .replace(/([?&]password=)[^&\s]+/gi, '$1***')
 }

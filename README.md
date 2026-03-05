@@ -93,6 +93,24 @@ PRISMA_DISABLE_POSTGRESQL_PREPARED_STATEMENTS=true
 
 If your database password contains special characters (for example `@`, `:`, `/`, `?`, `#`, `%`), URL-encode it in both URLs.
 
+## Production Prisma Deploy (Supabase)
+
+This repo already has Prisma migrations in `prisma/migrations`, so production should use:
+
+```powershell
+$env:DIRECT_URL="postgresql://postgres.<project-ref>:[PASSWORD]@db.<project-ref>.supabase.co:5432/postgres?sslmode=require"
+$env:DATABASE_URL=$env:DIRECT_URL
+pnpm prisma migrate deploy
+```
+
+If a project does not have a `prisma/migrations` folder yet, use:
+
+```powershell
+$env:DIRECT_URL="postgresql://postgres.<project-ref>:[PASSWORD]@db.<project-ref>.supabase.co:5432/postgres?sslmode=require"
+$env:DATABASE_URL=$env:DIRECT_URL
+pnpm prisma db push
+```
+
 Auth:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
