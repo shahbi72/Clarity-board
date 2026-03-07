@@ -34,7 +34,7 @@ export default function LandingPage() {
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link href="/dashboard?demo=1">
+              <Link href="/demo">
                 <PlayCircle className="mr-2 h-4 w-4" />
                 Try Demo Data
               </Link>

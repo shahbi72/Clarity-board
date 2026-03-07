@@ -46,6 +46,16 @@ type SidebarNavItem = {
   businessOnly?: boolean
 }
 
+const DEMO_ROUTE_MAP: Record<string, string> = {
+  '/dashboard': '/demo',
+  '/dashboard/insights': '/demo/insights',
+  '/dashboard/products': '/demo/products',
+  '/dashboard/profit': '/demo/profit',
+  '/dashboard/trends': '/demo/trends',
+  '/dashboard/sync': '/demo/sync',
+  '/dashboard/settings': '/demo/settings',
+}
+
 const NAV_ITEMS: SidebarNavItem[] = [
   { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Upload Dataset', href: '/upload', icon: Upload },
@@ -59,13 +69,20 @@ const NAV_ITEMS: SidebarNavItem[] = [
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Overview',
+  '/demo': 'Overview',
   '/upload': 'Upload Dataset',
   '/dashboard/insights': 'Insights',
+  '/demo/insights': 'Insights',
   '/dashboard/products': 'Products',
+  '/demo/products': 'Products',
   '/dashboard/profit': 'Profit Estimator',
+  '/demo/profit': 'Profit Estimator',
   '/dashboard/trends': 'Revenue Trends',
+  '/demo/trends': 'Revenue Trends',
   '/dashboard/sync': 'Sync',
+  '/demo/sync': 'Sync',
   '/dashboard/settings': 'Settings',
+  '/demo/settings': 'Settings',
 }
 
 function getPageTitle(pathname: string): string {
@@ -96,7 +113,7 @@ function getInitials(nameOrEmail: string): string {
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const { unreadCount, user } = useDashboardData()
+  const { unreadCount, user, isDemoMode } = useDashboardData()
   const userPlan = useUserPlan()
   const { openCheckout, openPortal, checkoutLoading, portalLoading } = useBillingActions()
   const [collapsed, setCollapsed] = useState(false)
@@ -108,9 +125,22 @@ export function AppShell({ children }: AppShellProps) {
   }, [pathname])
 
   const pageTitle = useMemo(() => getPageTitle(pathname), [pathname])
+  const navItems = useMemo(
+    () =>
+      NAV_ITEMS
+        .filter((item) => !(isDemoMode && item.href === '/upload'))
+        .map((item) => ({
+          ...item,
+          href: isDemoMode ? (DEMO_ROUTE_MAP[item.href] ?? item.href) : item.href,
+        })),
+    [isDemoMode]
+  )
 
   const sidebarWidthClass = collapsed ? 'md:w-16' : 'md:w-[240px]'
   const contentOffsetClass = collapsed ? 'md:left-16' : 'md:left-[240px]'
+  const homeHref = isDemoMode ? '/demo' : '/dashboard'
+  const insightsHref = isDemoMode ? '/demo/insights' : '/dashboard/insights'
+  const settingsHref = isDemoMode ? '/demo/settings' : '/dashboard/settings'
 
   const userLabel = user.name || user.email || 'User'
   const planLabel = userPlan.isBusiness ? 'Business' : userPlan.plan === 'free' ? 'Free' : 'Starter'
@@ -121,6 +151,11 @@ export function AppShell({ children }: AppShellProps) {
   async function handleSignOut() {
     setIsSigningOut(true)
     try {
+      if (isDemoMode) {
+        router.push('/')
+        return
+      }
+
       const supabase = getSupabaseBrowserClient()
       if (supabase) {
         await supabase.auth.signOut()
@@ -151,7 +186,7 @@ export function AppShell({ children }: AppShellProps) {
       >
         <div className="flex h-[60px] items-center border-b border-[#e5ebf5] px-4">
           {collapsed ? (
-            <Link href="/dashboard" aria-label="Clarityboard Home" className="mx-auto">
+            <Link href={homeHref} aria-label="Clarityboard Home" className="mx-auto">
               <Image
                 src="/assets/logo/icon-light-32x32.png"
                 alt="Clarityboard"
@@ -161,12 +196,12 @@ export function AppShell({ children }: AppShellProps) {
               />
             </Link>
           ) : (
-            <ClarityboardLogo href="/dashboard" imageClassName="h-8 w-auto" />
+            <ClarityboardLogo href={homeHref} imageClassName="h-8 w-auto" />
           )}
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const Icon = item.icon
             const active = isActivePath(pathname, item.href)
             const locked = Boolean(item.businessOnly && !userPlan.isBusiness)
@@ -223,7 +258,7 @@ export function AppShell({ children }: AppShellProps) {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => router.push('/dashboard/insights')}
+            onClick={() => router.push(insightsHref)}
             className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d9e1ef] text-[#1b2540]"
             aria-label="Notifications"
           >
@@ -255,7 +290,7 @@ export function AppShell({ children }: AppShellProps) {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onSelect={() => router.push('/dashboard/settings')}>
+              <DropdownMenuItem onSelect={() => router.push(settingsHref)}>
                 Account
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -265,7 +300,7 @@ export function AppShell({ children }: AppShellProps) {
                 disabled={isSigningOut}
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                Logout
+                {isDemoMode ? 'Back to home' : 'Logout'}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

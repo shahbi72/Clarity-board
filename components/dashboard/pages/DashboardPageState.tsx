@@ -18,10 +18,14 @@ type DatasetsResponse = {
 const CARD_CLASS = 'bg-white rounded-2xl shadow-sm border border-[#d9e1ef]'
 
 export function DashboardPageState({ children }: DashboardPageStateProps) {
-  const { viewState, summary } = useDashboardData()
+  const { viewState, summary, isDemoMode } = useDashboardData()
   const [datasetCount, setDatasetCount] = useState<number | null>(null)
 
   useEffect(() => {
+    if (isDemoMode) {
+      return
+    }
+
     let mounted = true
 
     const loadDatasetCount = async () => {
@@ -50,14 +54,14 @@ export function DashboardPageState({ children }: DashboardPageStateProps) {
     return () => {
       mounted = false
     }
-  }, [])
+  }, [isDemoMode])
 
   if (viewState.loading) {
     return (
       <Card className={CARD_CLASS}>
         <CardContent className="flex min-h-44 items-center justify-center text-[#6b7a99]">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Loading dashboard...
+          {isDemoMode ? 'Loading demo insights...' : 'Loading dashboard...'}
         </CardContent>
       </Card>
     )
@@ -69,10 +73,27 @@ export function DashboardPageState({ children }: DashboardPageStateProps) {
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2 text-[#ef4444]">
             <AlertCircle className="h-4 w-4" />
-            Dashboard unavailable
+            {isDemoMode ? 'Demo temporarily unavailable' : 'Dashboard unavailable'}
           </CardTitle>
-          <CardDescription className="text-[#ef4444]/90">{viewState.error}</CardDescription>
+          <CardDescription className="text-[#ef4444]/90">
+            {isDemoMode
+              ? 'We could not load demo data right now. Please refresh and try again.'
+              : viewState.error}
+          </CardDescription>
         </CardHeader>
+        {isDemoMode ? (
+          <CardContent>
+            <Button
+              type="button"
+              className="bg-[#4285f4] hover:bg-[#4285f4]/90"
+              onClick={() => {
+                window.location.reload()
+              }}
+            >
+              Retry demo
+            </Button>
+          </CardContent>
+        ) : null}
       </Card>
     )
   }

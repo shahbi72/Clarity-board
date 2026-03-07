@@ -230,7 +230,7 @@ export function PricingPlans({ userId }: PricingPlansProps) {
             </Button>
             {plan.id === 'basic' ? (
               <Button variant="outline" asChild>
-                <Link href="/dashboard?demo=1">Try demo data first</Link>
+                <Link href="/demo">Try demo data first</Link>
               </Button>
             ) : null}
           </div>

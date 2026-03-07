@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { calculateStoreHealthScore } from '@/lib/shopify/health-score'
 import { buildDashboardInsightCards } from '@/lib/shopify/insights'
 import { calculateProfitEstimate } from '@/lib/shopify/profit'
@@ -145,8 +145,10 @@ export function DashboardDataProvider({
   user,
 }: DashboardDataProviderProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
-  const isDemoMode = searchParams.get('demo') === '1'
+  const isDemoMode =
+    searchParams.get('demo') === '1' || pathname === '/demo' || pathname.startsWith('/demo/')
 
   const [rangeDays, setRangeDays] = useState<ShopifyTrendRangeDays>(7)
   const [includeCancelled, setIncludeCancelled] = useState(false)

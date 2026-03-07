@@ -8,7 +8,7 @@ type PublicHeaderProps = {
 }
 
 const NAV_LINKS: Array<{ href: string; label: string }> = [
-  { href: '/dashboard?demo=1', label: 'Demo' },
+  { href: '/demo', label: 'Demo' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/contact', label: 'Contact' },
 ]
