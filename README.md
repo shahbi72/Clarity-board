@@ -32,7 +32,9 @@ Focused MVP for Shopify store owners:
 - `GET /api/shopify/summary`
 - `GET /api/shopify/demo-summary`
 - `POST /api/shopify/copilot`
-- `POST /api/webhooks/paddle`
+- `POST /api/billing/checkout`
+- `POST /api/billing/webhook` (primary)
+- `POST /api/webhooks/paddle` (legacy alias)
 
 Business sync APIs:
 - `GET /api/business/status`
@@ -146,8 +148,39 @@ Business sync:
 
 1. Create Starter and Business prices in Paddle.
 2. Configure webhook endpoint:
-   - `POST https://<your-domain>/api/webhooks/paddle`
+   - `POST https://<your-domain>/api/billing/webhook`
 3. Set `PADDLE_WEBHOOK_SECRET`.
+
+## Paddle Billing Integration (Next.js + Prisma)
+
+Required env vars:
+- `PADDLE_API_KEY` (server API token)
+- `PADDLE_WEBHOOK_SECRET` (signature verification)
+- `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN` (Paddle.js client token)
+- `NEXT_PUBLIC_PADDLE_PRICE_BASIC_ID` (Starter price ID)
+- `NEXT_PUBLIC_PADDLE_PRICE_BUSINESS_ID` (Business price ID)
+- `NEXT_PUBLIC_PADDLE_ENV` (`sandbox` or `production`)
+- Optional: `NEXT_PUBLIC_PADDLE_MANAGEMENT_URL` (direct billing portal fallback URL)
+
+Local test flow:
+1. Set Paddle env vars in `.env.local`.
+2. Run `pnpm dev`.
+3. Verify pricing page:
+   - `http://localhost:3000/pricing`
+   - Plans with missing config are hidden and a friendly notice is shown.
+4. Test checkout endpoint (authenticated session required):
+   - `POST /api/billing/checkout` with `{ "priceId": "<configured_price_id>" }`
+5. Test webhook endpoint:
+   - `POST /api/billing/webhook` with valid `Paddle-Signature`
+   - Idempotency is enforced by `event_id`.
+
+Vercel test flow:
+1. Add all Paddle env vars to Vercel (Preview + Production).
+2. Deploy.
+3. In Paddle dashboard, configure webhook destination:
+   - `https://<your-domain>/api/billing/webhook`
+4. Send test events (`subscription.created`, `subscription.updated`, `subscription.canceled`).
+5. Confirm updates in Prisma `subscriptions` and `billingEventLog` tables.
 
 ## Vercel Cron Setup
 

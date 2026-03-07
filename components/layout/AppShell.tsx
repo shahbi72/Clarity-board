@@ -16,6 +16,7 @@ import {
   RefreshCcw,
   Settings,
   TrendingUp,
+  Upload,
   WalletCards,
 } from 'lucide-react'
 import { ClarityboardLogo } from '@/components/branding/ClarityboardLogo'
@@ -47,6 +48,7 @@ type SidebarNavItem = {
 
 const NAV_ITEMS: SidebarNavItem[] = [
   { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Upload Dataset', href: '/upload', icon: Upload },
   { label: 'Insights', href: '/dashboard/insights', icon: Lightbulb },
   { label: 'Products', href: '/dashboard/products', icon: Package },
   { label: 'Profit Estimator', href: '/dashboard/profit', icon: WalletCards },
@@ -57,6 +59,7 @@ const NAV_ITEMS: SidebarNavItem[] = [
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Overview',
+  '/upload': 'Upload Dataset',
   '/dashboard/insights': 'Insights',
   '/dashboard/products': 'Products',
   '/dashboard/profit': 'Profit Estimator',

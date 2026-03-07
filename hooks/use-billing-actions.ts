@@ -1,14 +1,19 @@
 'use client'
 
 import { useCallback, useState } from 'react'
+import { BASIC_PRICE_ID, BUSINESS_PRICE_ID } from '@/lib/billing/plans'
 import { getPaddleInstance } from '@/lib/paddle/client'
 
 type BillingPlanId = 'starter' | 'business'
 
 type CheckoutResponse = {
-  planId: BillingPlanId
+  priceId: string
   transactionId: string | null
-  checkoutUrl: string | null
+  checkoutUrl: string
+}
+
+function resolvePriceId(planId: BillingPlanId): string {
+  return planId === 'business' ? BUSINESS_PRICE_ID : BASIC_PRICE_ID
 }
 
 function readApiError(payload: unknown): string | null {
@@ -46,12 +51,21 @@ export function useBillingActions() {
       setCheckoutLoading(true)
 
       try {
+        const priceId = resolvePriceId(planId)
+        if (!priceId) {
+          throw new Error(
+            planId === 'business'
+              ? 'Business checkout is temporarily unavailable.'
+              : 'Starter checkout is temporarily unavailable.'
+          )
+        }
+
         const response = await fetch('/api/billing/checkout', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ planId }),
+          body: JSON.stringify({ priceId }),
         })
 
         const payload = (await response.json()) as CheckoutResponse | { error?: unknown }
@@ -60,10 +74,6 @@ export function useBillingActions() {
         }
 
         const checkout = payload as CheckoutResponse
-        if (!checkout.transactionId && !checkout.checkoutUrl) {
-          throw new Error('Checkout session was created without a launch URL.')
-        }
-
         const paddle = await getPaddleInstance()
         if (checkout.transactionId) {
           paddle.Checkout.open({
@@ -75,9 +85,7 @@ export function useBillingActions() {
           return
         }
 
-        if (checkout.checkoutUrl) {
-          window.location.assign(checkout.checkoutUrl)
-        }
+        window.location.assign(checkout.checkoutUrl)
       } catch (error) {
         setBillingError(error instanceof Error ? error.message : 'Unable to open checkout.')
       } finally {

@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { useDashboardData } from '@/components/dashboard/dashboard-data-provider'
@@ -10,10 +11,46 @@ type DashboardPageStateProps = {
   children: React.ReactNode
 }
 
+type DatasetsResponse = {
+  datasets?: unknown
+}
+
 const CARD_CLASS = 'bg-white rounded-2xl shadow-sm border border-[#d9e1ef]'
 
 export function DashboardPageState({ children }: DashboardPageStateProps) {
   const { viewState, summary } = useDashboardData()
+  const [datasetCount, setDatasetCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+
+    const loadDatasetCount = async () => {
+      try {
+        const response = await fetch('/api/datasets', { cache: 'no-store' })
+        const payload = (await response.json()) as DatasetsResponse
+        if (!mounted) {
+          return
+        }
+
+        if (!response.ok || !Array.isArray(payload.datasets)) {
+          setDatasetCount(null)
+          return
+        }
+
+        setDatasetCount(payload.datasets.length)
+      } catch {
+        if (mounted) {
+          setDatasetCount(null)
+        }
+      }
+    }
+
+    void loadDatasetCount()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   if (viewState.loading) {
     return (
@@ -59,17 +96,32 @@ export function DashboardPageState({ children }: DashboardPageStateProps) {
   }
 
   if (!summary || !summary.hasData) {
+    const noDatasets = datasetCount === 0
+
     return (
       <Card className={CARD_CLASS}>
         <CardHeader>
-          <CardTitle className="text-[#1b2540]">No Shopify data yet</CardTitle>
+          <CardTitle className="text-[#1b2540]">
+            {noDatasets ? 'Upload your Shopify Orders CSV to start' : 'No Shopify data yet'}
+          </CardTitle>
           <CardDescription className="text-[#6b7a99]">
-            Upload a Shopify Orders CSV to view your metrics.
+            {noDatasets
+              ? 'Upload your Shopify Orders CSV to start analyzing your store.'
+              : 'Upload a Shopify Orders CSV to view your metrics.'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button asChild className="bg-[#4285f4] hover:bg-[#4285f4]/90">
-            <Link href="/upload">Upload Shopify Orders CSV</Link>
+        <CardContent className="flex flex-wrap gap-3">
+          {noDatasets ? (
+            <Button asChild className="bg-[#4285f4] hover:bg-[#4285f4]/90">
+              <Link href="/upload">Upload CSV</Link>
+            </Button>
+          ) : null}
+          <Button
+            asChild
+            variant={noDatasets ? 'outline' : 'default'}
+            className={noDatasets ? undefined : 'bg-[#4285f4] hover:bg-[#4285f4]/90'}
+          >
+            <Link href="/upload">Upload Orders CSV</Link>
           </Button>
         </CardContent>
       </Card>

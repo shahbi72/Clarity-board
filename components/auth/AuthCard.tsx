@@ -70,6 +70,7 @@ export function AuthCard({ mode }: AuthCardProps) {
   const [oauthLoading, setOauthLoading] = React.useState<OAuthProvider | null>(null)
   const [error, setError] = React.useState<string | null>(null)
   const [info, setInfo] = React.useState<string | null>(null)
+  const [isCheckingSession, setIsCheckingSession] = React.useState(authConfigured)
 
   const queryNext = searchParams.get('next')
   const nextPath = queryNext && queryNext.startsWith('/') ? queryNext : '/app/dashboard'
@@ -85,6 +86,7 @@ export function AuthCard({ mode }: AuthCardProps) {
   )
   const canSubmit =
     !isSubmitting &&
+    !isCheckingSession &&
     oauthLoading === null &&
     !authUnavailable &&
     (isSignIn || isPasswordStrong)
@@ -104,15 +106,30 @@ export function AuthCard({ mode }: AuthCardProps) {
         hasFallbackSessionFromCookieHeader(document.cookie)
       ) {
         router.replace(nextPath)
+        return
       }
+      setIsCheckingSession(false)
       return
     }
 
+    let mounted = true
+
     const syncSession = async () => {
-      const { data, error: userError } = await supabase.auth.getUser()
-      if (!userError && data.user) {
-        router.replace(nextPath)
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!mounted) {
+        return
       }
+
+      if (session?.user) {
+        router.replace(nextPath)
+        router.refresh()
+        return
+      }
+
+      setIsCheckingSession(false)
     }
 
     void syncSession()
@@ -122,10 +139,15 @@ export function AuthCard({ mode }: AuthCardProps) {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         router.replace(nextPath)
+        router.refresh()
+        return
       }
+
+      setIsCheckingSession(false)
     })
 
     return () => {
+      mounted = false
       subscription.unsubscribe()
     }
   }, [authConfigured, fallbackEnabled, supabase, router, nextPath])
@@ -163,8 +185,14 @@ export function AuthCard({ mode }: AuthCardProps) {
           password,
         })
         if (signInError) throw signInError
-        router.replace(nextPath)
-        router.refresh()
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+        if (session?.user) {
+          router.replace(nextPath)
+          router.refresh()
+        }
         return
       }
 
@@ -226,6 +254,19 @@ export function AuthCard({ mode }: AuthCardProps) {
   const description = isSignIn
     ? tAuthCard('signInDescription')
     : tAuthCard('signUpDescription')
+
+  if (isCheckingSession) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
+        <Card className="w-full max-w-md border-border bg-card shadow-lg">
+          <CardContent className="flex min-h-44 items-center justify-center text-sm text-muted-foreground">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Checking your session...
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">

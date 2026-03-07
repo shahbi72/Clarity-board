@@ -10,7 +10,6 @@ import { getPaddleInstance } from '@/lib/paddle/client'
 
 type PricingPlansProps = {
   userId: string | null
-  userEmail: string | null
 }
 
 type PlanId = 'basic' | 'business'
@@ -24,6 +23,12 @@ type PlanDefinition = {
   featureList: string[]
   cta: string
   highlighted?: boolean
+}
+
+type CheckoutResponse = {
+  priceId: string
+  transactionId: string | null
+  checkoutUrl: string
 }
 
 const PLAN_DEFINITIONS: PlanDefinition[] = [
@@ -60,23 +65,80 @@ const PLAN_DEFINITIONS: PlanDefinition[] = [
   },
 ]
 
+const PADDLE_CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN?.trim() ?? ''
+
 function getPriceId(plan: PlanId): string {
   return plan === 'business' ? BUSINESS_PRICE_ID : BASIC_PRICE_ID
 }
 
-export function PricingPlans({ userId, userEmail }: PricingPlansProps) {
+function getPlanUnavailableReason(plan: PlanId): string | null {
+  if (!PADDLE_CLIENT_TOKEN) {
+    return 'Billing checkout is temporarily unavailable while payment settings are being configured.'
+  }
+
+  if (!getPriceId(plan)) {
+    return plan === 'business'
+      ? 'Business plan is temporarily unavailable right now.'
+      : 'Starter plan is temporarily unavailable right now.'
+  }
+
+  return null
+}
+
+function readApiError(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object') {
+    return null
+  }
+
+  const topLevelError = (payload as { error?: unknown }).error
+  if (!topLevelError) {
+    return null
+  }
+
+  if (typeof topLevelError === 'string') {
+    return topLevelError
+  }
+
+  if (typeof topLevelError === 'object') {
+    const message = (topLevelError as { message?: unknown }).message
+    if (typeof message === 'string' && message.trim()) {
+      return message
+    }
+  }
+
+  return null
+}
+
+export function PricingPlans({ userId }: PricingPlansProps) {
   const router = useRouter()
   const [isOpeningCheckout, setIsOpeningCheckout] = useState<PlanId | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const visiblePlans = PLAN_DEFINITIONS.filter((plan) => !getPlanUnavailableReason(plan.id))
+  const planUnavailableMessages = Array.from(
+    new Set(
+      PLAN_DEFINITIONS.map((plan) => getPlanUnavailableReason(plan.id)).filter(
+        (message): message is string => Boolean(message)
+      )
+    )
+  )
 
   useEffect(() => {
+    if (visiblePlans.length === 0) {
+      return
+    }
+
     void getPaddleInstance().catch(() => {
       // Checkout invocation handles runtime errors explicitly.
     })
-  }, [])
+  }, [visiblePlans.length])
 
   const handleCheckout = async (plan: PlanId) => {
     setCheckoutError(null)
+    const unavailableReason = getPlanUnavailableReason(plan)
+    if (unavailableReason) {
+      setCheckoutError(unavailableReason)
+      return
+    }
 
     if (!userId) {
       router.push('/signup')
@@ -96,16 +158,31 @@ export function PricingPlans({ userId, userEmail }: PricingPlansProps) {
     setIsOpeningCheckout(plan)
 
     try {
-      const paddle = await getPaddleInstance()
-      paddle.Checkout.open({
-        items: [{ priceId, quantity: 1 }],
-        customer: userEmail ? { email: userEmail } : undefined,
-        customData: {
-          user_id: userId,
-          plan,
-          app: 'clarityboard-shopify',
+      const response = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ priceId }),
       })
+      const payload = (await response.json()) as CheckoutResponse | { error?: unknown }
+      if (!response.ok) {
+        throw new Error(readApiError(payload) || 'Unable to open checkout.')
+      }
+
+      const paddle = await getPaddleInstance()
+      const checkoutPayload = payload as CheckoutResponse
+      if (checkoutPayload.transactionId) {
+        paddle.Checkout.open({
+          transactionId: checkoutPayload.transactionId,
+          settings: {
+            displayMode: 'overlay',
+          },
+        })
+        return
+      }
+
+      window.location.assign(checkoutPayload.checkoutUrl)
     } catch (error) {
       setCheckoutError(error instanceof Error ? error.message : 'Unable to open Paddle checkout.')
     } finally {
@@ -115,7 +192,7 @@ export function PricingPlans({ userId, userEmail }: PricingPlansProps) {
 
   return (
     <section className="mx-auto mt-10 grid max-w-5xl gap-6 md:grid-cols-2">
-      {PLAN_DEFINITIONS.map((plan) => (
+      {visiblePlans.map((plan) => (
         <article
           key={plan.id}
           className={`rounded-2xl border p-6 shadow-sm ${
@@ -159,6 +236,19 @@ export function PricingPlans({ userId, userEmail }: PricingPlansProps) {
           </div>
         </article>
       ))}
+
+      {visiblePlans.length === 0 ? (
+        <p className="md:col-span-2 rounded-lg border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Paid plans are temporarily unavailable while billing configuration is being finalized.
+          Please check back shortly.
+        </p>
+      ) : null}
+
+      {planUnavailableMessages.length > 0 ? (
+        <p className="md:col-span-2 rounded-lg border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {planUnavailableMessages.join(' ')}
+        </p>
+      ) : null}
 
       {checkoutError ? (
         <p className="md:col-span-2 rounded-lg border border-rose-300/50 bg-rose-50 px-4 py-3 text-sm text-rose-700">

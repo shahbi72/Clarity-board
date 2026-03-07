@@ -30,8 +30,8 @@ const mainNavItems = [
     icon: LayoutDashboard,
   },
   {
-    title: 'Upload Data',
-    href: '/app/upload',
+    title: 'Upload Dataset',
+    href: '/upload',
     icon: Upload,
   },
   {

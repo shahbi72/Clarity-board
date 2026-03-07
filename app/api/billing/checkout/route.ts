@@ -1,18 +1,13 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { BASIC_PRICE_ID, BUSINESS_PRICE_ID, resolvePlanFromPriceId } from '@/lib/billing/plans'
 import { jsonApiError, ApiRouteError } from '@/lib/server/api-response'
 import { ensureCurrentUser, getCurrentUserIdentity } from '@/lib/server/auth'
-import {
-  getPaddleServerClient,
-  normalizeBillingPlanId,
-  resolvePriceIdForPlan,
-  toSubscriptionPlan,
-} from '@/lib/server/paddle'
+import { getPaddleServerClient } from '@/lib/server/paddle'
 import { getSubscriptionForUser } from '@/lib/server/subscriptions'
 
 const BodySchema = z.object({
-  planId: z.string().trim().min(1),
-  userId: z.string().trim().min(1).optional(),
+  priceId: z.string().trim().min(1),
 })
 
 function getCheckoutReturnUrl(): string | undefined {
@@ -28,29 +23,45 @@ function getCheckoutReturnUrl(): string | undefined {
 export async function POST(request: Request) {
   try {
     const payload = BodySchema.parse(await request.json())
+    const normalizedPriceId = payload.priceId.trim()
+    const allowedPriceIds = [BASIC_PRICE_ID, BUSINESS_PRICE_ID].filter((value) => value.trim().length > 0)
+    if (allowedPriceIds.length === 0) {
+      throw new ApiRouteError(
+        500,
+        'billing_not_configured',
+        'Checkout is unavailable because Paddle price IDs are not configured.'
+      )
+    }
+
+    if (!allowedPriceIds.includes(normalizedPriceId)) {
+      throw new ApiRouteError(
+        400,
+        'invalid_price_id',
+        'priceId must match configured Starter or Business Paddle price IDs.'
+      )
+    }
+
+    const resolvedPlan = resolvePlanFromPriceId(normalizedPriceId)
+    if (!resolvedPlan) {
+      throw new ApiRouteError(
+        400,
+        'invalid_price_id',
+        'priceId does not map to a supported subscription plan.'
+      )
+    }
+
     const identity = await getCurrentUserIdentity()
     await ensureCurrentUser(identity.id)
-
-    if (payload.userId && payload.userId !== identity.id) {
-      throw new ApiRouteError(403, 'forbidden', 'userId does not match authenticated user.')
-    }
-
-    const planId = normalizeBillingPlanId(payload.planId)
-    if (!planId) {
-      throw new ApiRouteError(400, 'invalid_plan', 'planId must be "starter" or "business".')
-    }
-
-    const priceId = resolvePriceIdForPlan(planId)
     const existingSubscription = await getSubscriptionForUser(identity.id)
     const paddle = getPaddleServerClient()
 
     const transaction = await paddle.transactions.create({
-      items: [{ priceId, quantity: 1 }],
+      items: [{ priceId: normalizedPriceId, quantity: 1 }],
       collectionMode: 'automatic',
       customerId: existingSubscription?.paddleCustomerId ?? undefined,
       customData: {
         user_id: identity.id,
-        plan: toSubscriptionPlan(planId),
+        plan: resolvedPlan,
         app: 'clarityboard-dashboard',
       },
       checkout: {
@@ -58,10 +69,19 @@ export async function POST(request: Request) {
       },
     })
 
+    const checkoutUrl = transaction.checkout?.url?.trim() ?? ''
+    if (!checkoutUrl) {
+      throw new ApiRouteError(
+        502,
+        'checkout_url_missing',
+        'Paddle transaction was created without a checkout URL.'
+      )
+    }
+
     return NextResponse.json({
-      planId,
-      transactionId: transaction.id,
-      checkoutUrl: transaction.checkout?.url ?? null,
+      priceId: normalizedPriceId,
+      transactionId: transaction.id ?? null,
+      checkoutUrl,
     })
   } catch (error) {
     return jsonApiError(error)

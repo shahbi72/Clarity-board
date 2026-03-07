@@ -13,15 +13,12 @@ export const metadata: Metadata = {
 
 export default async function PricingPage() {
   let userId: string | null = null
-  let userEmail: string | null = null
 
   try {
     const identity = await getCurrentUserIdentity()
     userId = identity.id
-    userEmail = identity.email
   } catch {
     userId = null
-    userEmail = null
   }
 
   return (
@@ -44,7 +41,7 @@ export default async function PricingPage() {
           </div>
         </section>
 
-        <PricingPlans userId={userId} userEmail={userEmail} />
+        <PricingPlans userId={userId} />
       </main>
     </div>
   )
